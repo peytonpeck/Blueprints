@@ -1,0 +1,49 @@
+# --------------------------------------------------------------------------------------
+#
+# Welcome to the settings file for Blueprints. Below is some documentation for each feature:
+#
+# Play_Sounds - true/false: if true, sounds will be played upon placing a blueprint.
+#
+# Error_Block - (block): the block that will be presented when blocks are in the way of a blueprint.
+#                        find a list of blocks at https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Material.html
+#
+# Block_Timeout - time in seconds: the amount of time the Error_Block will be shown to the player.
+#
+# Message_Prefix - "prefix ": The prefix to every message that comes from this plugin. Color codes (&4, &l, etc.) are allowed.
+#                             If you want messages to have a space between the prefix and message, add a space at the end of the prefix.
+#
+# ---------------------------------------------------------------------------------------
+
+Play_Sounds: true
+Block:
+  Show_Error_Preview: true
+  Error_Block: RED_CONCRETE
+  Block_Timeout: 5
+  No_Place_Outside_Claims: true
+  No_Place_Block_In_Way: true
+  No_Place_Admin_Claim: true
+  Ignore_Blocks:
+    - GRASS
+    - WATER
+    - SEAGRASS
+    - TALL_SEAGRASS
+    - TALL_GRASS
+    - SNOW
+    - KELP_PLANT
+    - KELP
+
+
+
+Messages:
+  Message_Prefix: "&8[&3Blueprints&8] "
+  Reload_Success: "&7Config successfully reloaded"
+  Build_Success: "&bYour blueprint has been built!"
+  Blueprint_Not_In_Claim: "&cYou must place your blueprint in a claim!"
+  Player_Not_Trusted: "&cYou must place your blueprint in a claim you are trusted in!"
+  Blueprint_In_Admin_Claim: "&cPart of/your entire blueprint has been placed in an admin claim, do not try to grief!"
+  Show_Error_True_Message: "&cYour blueprint cannot be built here because there are blocks in the way. They have been highlighted for show."
+  Show_Error_False_Message: "&cYour blueprint cannot be built here because there are blocks in the way."
+
+Log_Lag_Over_Milis: 100
+Debug: []
+Version: 1
