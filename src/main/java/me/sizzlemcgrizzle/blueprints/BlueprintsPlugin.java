@@ -35,7 +35,6 @@ public class BlueprintsPlugin extends SimplePlugin {
 
 	}
 
-	//Clear ghost blocks on reload
 	@Override
 	protected void onPluginReload() {
 		Bukkit.getPluginManager().callEvent(event);
