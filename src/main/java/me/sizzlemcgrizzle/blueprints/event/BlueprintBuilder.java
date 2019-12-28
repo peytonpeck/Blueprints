@@ -23,12 +23,9 @@ import de.craftlancer.clclans.CLClans;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
-import me.sizzlemcgrizzle.blueprints.settings.SchematicCache;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -71,12 +68,11 @@ public class BlueprintBuilder implements Listener {
 			if (clans.isEnabled())
 				if (clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId())) != null) {
 					ChatColor color = clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId())).getColor();
-					//ChatColor color = clans.getClanByUUID(player.getUniqueId()).getColor();
 					for (BlockVector3 blockVector3 : clipboard.getRegion()) {
 						if (clipboard.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_WOOL))
-							clipboard.setBlock(blockVector3, blueprintsPlugin.colorCache().getWoolColor(color));
+							clipboard.setBlock(blockVector3, ColorCache.getWoolColor(color));
 						if (clipboard.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_CONCRETE))
-							clipboard.setBlock(blockVector3, blueprintsPlugin.colorCache().getConcreteColor(color));
+							clipboard.setBlock(blockVector3, ColorCache.getConcreteColor(color));
 					}
 				}
 
@@ -91,8 +87,10 @@ public class BlueprintBuilder implements Listener {
 	public void buildBlueprint(BlockPlaceEvent event) throws IOException, InvalidConfigurationException, WorldEditException {
 		Player player = event.getPlayer();
 		ItemStack item = event.getItemInHand();
+		Block block = event.getBlockPlaced();
+		World world = player.getWorld();
 
-		if (new SchematicCache().getSchematicFor(item) != null) {
+		if (blueprintsPlugin.schematicCache().getSchematicFor(item) != null) {
 			//Store the schematic from the block in a variable, and set the blueprint block to air so it cannot be duped.
 			String schematic = blueprintsPlugin.schematicCache().getSchematicFor(event.getItemInHand());
 			event.getBlockPlaced().setType(Material.AIR);
@@ -124,12 +122,12 @@ public class BlueprintBuilder implements Listener {
 
 
 				//Get the max and min point of where the schematic will be placed. the blueprint will be the center of this.
-				Location maxPoint = new Location(event.getPlayer().getWorld(), event.getBlockPlaced().getX() + getSchematic(schematic, player).getDimensions().getX() / 2F,
-						event.getBlockPlaced().getY() + getSchematic(schematic, player).getDimensions().getY() - 1,
-						event.getBlockPlaced().getZ() + getSchematic(schematic, player).getDimensions().getZ() / 2F);
-				Location minPoint = new Location(event.getPlayer().getWorld(), event.getBlockPlaced().getX() - getSchematic(schematic, player).getDimensions().getX() / 2F,
-						event.getBlockPlaced().getY(),
-						event.getBlockPlaced().getZ() - getSchematic(schematic, player).getDimensions().getZ() / 2F);
+				Location maxPoint = new Location(world, block.getX() + getSchematic(schematic, player).getDimensions().getX() / 2F,
+						block.getY() + getSchematic(schematic, player).getDimensions().getY() - 1,
+						block.getZ() + getSchematic(schematic, player).getDimensions().getZ() / 2F);
+				Location minPoint = new Location(world, block.getX() - getSchematic(schematic, player).getDimensions().getX() / 2F,
+						block.getY(),
+						block.getZ() - getSchematic(schematic, player).getDimensions().getZ() / 2F);
 
 				if (GriefPrevention.instance.isEnabled()) {
 					Claim claim = null;
@@ -141,12 +139,12 @@ public class BlueprintBuilder implements Listener {
 						}
 					}
 
-
 					if (claim == null && Settings.Block.NO_PLACE_OUTSIDE_CLAIMS) {
 						Common.tell(player, notInClaim);
 						if (Settings.PLAY_SOUNDS)
 							player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
 						event.setCancelled(true);
+
 					} else if (claim != null && claim.allowEdit(player) != null && !event.isCancelled() && !player.isOp()) {
 						if (!claim.getOwnerName().equals(player.getName())) {
 							Common.tell(player, notTrusted);
@@ -192,7 +190,8 @@ public class BlueprintBuilder implements Listener {
 								if (!event.isCancelled() && !location.getBlock().getType().equals(Material.AIR) && Settings.Block.NO_PLACE_BLOCK_IN_WAY) {
 									if (!originalBlockMap.containsKey(location))
 										originalBlockMap.put(location, player);
-									player.sendBlockChange(location, Settings.Block.ERROR_BLOCK.createBlockData());
+									if (Settings.Block.SHOW_ERROR_PREVIEW)
+										player.sendBlockChange(location, Settings.Block.ERROR_BLOCK.createBlockData());
 								}
 							}
 						}
@@ -225,8 +224,10 @@ public class BlueprintBuilder implements Listener {
 							entry.getValue().sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
 						originalBlockMap.clear();
 					};
-
-					Common.runLater(Settings.Block.BLOCK_TIMEOUT * 20, runnable);
+					if (Settings.Block.SHOW_ERROR_PREVIEW)
+						Common.runLater(Settings.Block.BLOCK_TIMEOUT * 20, runnable);
+					else
+						originalBlockMap.clear();
 				}
 			}
 		}
