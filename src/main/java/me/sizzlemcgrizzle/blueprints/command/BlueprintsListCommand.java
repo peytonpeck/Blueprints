@@ -1,7 +1,8 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
-import me.sizzlemcgrizzle.blueprints.settings.SchematicCache;
+import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.inventory.ItemStack;
 import org.mineacademy.fo.command.SimpleCommandGroup;
@@ -13,6 +14,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BlueprintsListCommand extends SimpleSubCommand {
+	private BlueprintsPlugin blueprintsPlugin = (BlueprintsPlugin) Bukkit.getPluginManager().getPlugin("Blueprints");
+
 	protected BlueprintsListCommand(SimpleCommandGroup parent) {
 		super(parent, "list");
 		setPermission("blueprints.list");
@@ -23,7 +26,7 @@ public class BlueprintsListCommand extends SimpleSubCommand {
 
 		try {
 
-			HashMap<ItemStack, String> map = new SchematicCache().listBlueprints();
+			HashMap<ItemStack, String> map = blueprintsPlugin.schematicCache().listBlueprints();
 
 
 			if (map != null && map.size() != 0) {

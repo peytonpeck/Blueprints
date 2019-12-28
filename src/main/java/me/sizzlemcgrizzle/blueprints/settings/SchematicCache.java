@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class SchematicCache extends YamlConfiguration {
+public class SchematicCache {
 	private File file = new File(BlueprintsPlugin.getData().getAbsolutePath() + File.separator + "/blueprints.yml");
 	private YamlConfiguration config = new YamlConfiguration();
 	private HashMap<ItemStack, String> listBlueprintMap = new HashMap<>();

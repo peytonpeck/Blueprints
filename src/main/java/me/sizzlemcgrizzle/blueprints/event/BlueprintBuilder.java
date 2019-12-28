@@ -22,6 +22,7 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import de.craftlancer.clclans.CLClans;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
+import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.settings.SchematicCache;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.Bukkit;
@@ -49,6 +50,15 @@ public class BlueprintBuilder implements Listener {
 
 	private CLClans clans = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
 	private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
+	private BlueprintsPlugin blueprintsPlugin = (BlueprintsPlugin) Bukkit.getPluginManager().getPlugin("Blueprints");
+
+	//Messages for states of placing the schematic
+	private static String notInClaim = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BLUEPRINT_NOT_IN_CLAIM;
+	private static String notTrusted = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.PLAYER_NOT_TRUSTED;
+	private static String adminClaim = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BLUEPRINT_IN_ADMIN_CLAIM;
+	private static String blocksInWay = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_TRUE_MESSAGE;
+	private static String blocksInwayNoPreview = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_FALSE_MESSAGE;
+	private static String schematicFileNoExist = Settings.Messages.MESSAGE_PREFIX + "&cThis blueprint is not valid! Please contact an administrator if you think this is an error.";
 
 
 	private Clipboard getSchematic(String schematic, Player player) {
@@ -62,12 +72,11 @@ public class BlueprintBuilder implements Listener {
 				if (clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId())) != null) {
 					ChatColor color = clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId())).getColor();
 					//ChatColor color = clans.getClanByUUID(player.getUniqueId()).getColor();
-
 					for (BlockVector3 blockVector3 : clipboard.getRegion()) {
 						if (clipboard.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_WOOL))
-							clipboard.setBlock(blockVector3, new ColorCache().getWoolColor(color));
+							clipboard.setBlock(blockVector3, blueprintsPlugin.colorCache().getWoolColor(color));
 						if (clipboard.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_CONCRETE))
-							clipboard.setBlock(blockVector3, new ColorCache().getConcreteColor(color));
+							clipboard.setBlock(blockVector3, blueprintsPlugin.colorCache().getConcreteColor(color));
 					}
 				}
 
@@ -83,17 +92,9 @@ public class BlueprintBuilder implements Listener {
 		Player player = event.getPlayer();
 		ItemStack item = event.getItemInHand();
 
-		//Messages for states of placing the schematic
-		String notInClaim = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BLUEPRINT_NOT_IN_CLAIM;
-		String notTrusted = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.PLAYER_NOT_TRUSTED;
-		String adminClaim = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BLUEPRINT_IN_ADMIN_CLAIM;
-		String blocksInWay = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_TRUE_MESSAGE;
-		String blocksInwayNoPreview = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_FALSE_MESSAGE;
-		String schematicFileNoExist = Settings.Messages.MESSAGE_PREFIX + "&cThis blueprint is not valid! Please contact an administrator if you think this is an error.";
-
 		if (new SchematicCache().getSchematicFor(item) != null) {
 			//Store the schematic from the block in a variable, and set the blueprint block to air so it cannot be duped.
-			String schematic = new SchematicCache().getSchematicFor(event.getItemInHand());
+			String schematic = blueprintsPlugin.schematicCache().getSchematicFor(event.getItemInHand());
 			event.getBlockPlaced().setType(Material.AIR);
 
 			//"random" world guard/world edit information regarding getting the schematic and checking to see if it will be placed

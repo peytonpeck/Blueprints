@@ -2,7 +2,9 @@ package me.sizzlemcgrizzle.blueprints;
 
 import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandGroup;
 import me.sizzlemcgrizzle.blueprints.event.BlueprintBuilder;
+import me.sizzlemcgrizzle.blueprints.event.ColorCache;
 import me.sizzlemcgrizzle.blueprints.event.ReloadEvent;
+import me.sizzlemcgrizzle.blueprints.settings.SchematicCache;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.Bukkit;
 import org.mineacademy.fo.Common;
@@ -15,9 +17,11 @@ import java.util.List;
 public class BlueprintsPlugin extends SimplePlugin {
 
 	private ReloadEvent event = new ReloadEvent();
+	private SchematicCache schematicCache;
+	private ColorCache colorCache;
 
 	@Override
-	protected void onPluginStart() {
+	public void onPluginStart() {
 
 		registerEvents(new BlueprintBuilder());
 
@@ -32,12 +36,22 @@ public class BlueprintsPlugin extends SimplePlugin {
 		if (Bukkit.getPluginManager().isPluginEnabled("CLClans"))
 			Common.log("Successfully hooked into CLClans!");
 
+		this.schematicCache = new SchematicCache();
+		this.colorCache = new ColorCache();
 
 	}
 
 	@Override
 	protected void onPluginReload() {
 		Bukkit.getPluginManager().callEvent(event);
+	}
+
+	public SchematicCache schematicCache() {
+		return schematicCache;
+	}
+
+	public ColorCache colorCache() {
+		return colorCache;
 	}
 
 	@Override

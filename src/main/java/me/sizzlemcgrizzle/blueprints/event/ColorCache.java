@@ -4,7 +4,7 @@ import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import org.bukkit.ChatColor;
 
-class ColorCache {
+public class ColorCache {
 	BlockState getWoolColor(ChatColor color) {
 		switch (color) {
 			case AQUA:

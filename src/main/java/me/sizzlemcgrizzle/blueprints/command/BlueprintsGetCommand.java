@@ -1,7 +1,8 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
-import me.sizzlemcgrizzle.blueprints.settings.SchematicCache;
+import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.inventory.ItemStack;
 import org.mineacademy.fo.command.SimpleCommandGroup;
@@ -11,6 +12,8 @@ import java.io.IOException;
 import java.util.List;
 
 public class BlueprintsGetCommand extends SimpleSubCommand {
+	private BlueprintsPlugin blueprintsPlugin = (BlueprintsPlugin) Bukkit.getPluginManager().getPlugin("Blueprints");
+
 	protected BlueprintsGetCommand(SimpleCommandGroup parent) {
 		super(parent, "get");
 		setMinArguments(1);
@@ -21,7 +24,7 @@ public class BlueprintsGetCommand extends SimpleSubCommand {
 	@Override
 	protected void onCommand() {
 		try {
-			List<ItemStack> itemList = new SchematicCache().getBlueprint(args[0]);
+			List<ItemStack> itemList = blueprintsPlugin.schematicCache().getBlueprint(args[0]);
 			if (itemList == null)
 				tell(Settings.Messages.MESSAGE_PREFIX + "&cThere are no blueprints using this schematic. Check a list of schematics with &4/blueprints list&c.");
 			else {
