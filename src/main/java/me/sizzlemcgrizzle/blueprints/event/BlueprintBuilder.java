@@ -83,6 +83,28 @@ public class BlueprintBuilder implements Listener {
 		return clipboard;
 	}
 
+	private Boolean checkAdminClaim(double x, double y, double z, Player player, RegionManager regions) {
+		if (Settings.Block.NO_PLACE_ADMIN_CLAIM && WorldGuardPlugin.inst().isEnabled())
+			for (Map.Entry<String, ProtectedRegion> region : regions.getRegions().entrySet()) {
+				//Getting the biggest and smallest points in the region to see if the location above is in there
+				BlockVector3 regionMinPoint = region.getValue().getMinimumPoint();
+				BlockVector3 regionMaxPoint = region.getValue().getMaximumPoint();
+				//Variables defined to shorten the lenght of the if statement
+				double minX = regionMinPoint.getX(), maxX = regionMaxPoint.getX(),
+						minY = regionMinPoint.getY(), maxY = regionMaxPoint.getY(),
+						minZ = regionMinPoint.getZ(), maxZ = regionMaxPoint.getZ();
+
+				//Checks if any of the schematic blocks would be in a world guard claim.
+				if (minX <= x && x <= maxX && minY <= y && y <= maxY && minZ <= z && z <= maxZ && !player.isOp()) {
+					Common.tell(player, adminClaim);
+					if (Settings.PLAY_SOUNDS)
+						player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+					return true;
+				}
+			}
+		return false;
+	}
+
 	@EventHandler
 	public void buildBlueprint(BlockPlaceEvent event) throws IOException, InvalidConfigurationException, WorldEditException {
 		Player player = event.getPlayer();
@@ -165,25 +187,10 @@ public class BlueprintBuilder implements Listener {
 
 								//Getting every world guard region in the world to check if ANY of the schematic will be placed in an admin claim,
 								//because we don't want that.
-								if (Settings.Block.NO_PLACE_ADMIN_CLAIM && WorldGuardPlugin.inst().isEnabled())
-									for (Map.Entry<String, ProtectedRegion> region : regions.getRegions().entrySet()) {
-										//Getting the biggest and smallest points in the region to see if the location above is in there
-										BlockVector3 regionMinPoint = region.getValue().getMinimumPoint();
-										BlockVector3 regionMaxPoint = region.getValue().getMaximumPoint();
-										//Variables defined to shorten the lenght of the if statement
-										double minX = regionMinPoint.getX(), maxX = regionMaxPoint.getX(),
-												minY = regionMinPoint.getY(), maxY = regionMaxPoint.getY(),
-												minZ = regionMinPoint.getZ(), maxZ = regionMaxPoint.getZ();
-
-										//Checks if any of the schematic blocks would be in a world guard claim.
-										if (minX <= x && x <= maxX && minY <= y && y <= maxY && minZ <= z && z <= maxZ && !event.isCancelled() && !player.isOp()) {
-											Common.tell(player, adminClaim);
-											if (Settings.PLAY_SOUNDS)
-												player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
-											event.setCancelled(true);
-											break;
-										}
-									}
+								if (checkAdminClaim(x, y, z, player, regions)) {
+									event.setCancelled(true);
+									return;
+								}
 
 								//If there is a block in the way of where the schematic would place, disable the placement
 								//and send a "ghost block" to the player that is defined in the configuration.
