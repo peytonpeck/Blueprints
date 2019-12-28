@@ -1,17 +1,7 @@
 # --------------------------------------------------------------------------------------
 #
-# Welcome to the settings file for Blueprints. Below is some documentation for each feature:
-#
-# Play_Sounds - true/false: if true, sounds will be played upon placing a blueprint.
-#
-# Error_Block - (block): the block that will be presented when blocks are in the way of a blueprint.
-#                        find a list of blocks at https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Material.html
-#
-# Block_Timeout - time in seconds: the amount of time the Error_Block will be shown to the player.
-#
-# Message_Prefix - "prefix ": The prefix to every message that comes from this plugin. Color codes (&4, &l, etc.) are allowed.
-#                             If you want messages to have a space between the prefix and message, add a space at the end of the prefix.
-#
+# Welcome to the settings file for Blueprints.
+# For documentation, visit: https://github.com/SizzleMcGrizzle/Blueprints/wiki/settings.yml
 # ---------------------------------------------------------------------------------------
 
 Play_Sounds: true
