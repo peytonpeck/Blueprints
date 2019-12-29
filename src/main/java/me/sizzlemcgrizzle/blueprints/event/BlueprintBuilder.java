@@ -38,6 +38,7 @@ import org.mineacademy.fo.remain.CompSound;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -83,7 +84,7 @@ public class BlueprintBuilder implements Listener {
 		return clipboard;
 	}
 
-	private Boolean checkAdminClaim(double x, double y, double z, Player player, RegionManager regions) {
+	private Boolean checkAdminClaim(ArrayList<Location> locationList, Player player, RegionManager regions) {
 		if (Settings.Block.NO_PLACE_ADMIN_CLAIM && WorldGuardPlugin.inst().isEnabled())
 			for (Map.Entry<String, ProtectedRegion> region : regions.getRegions().entrySet()) {
 				//Getting the biggest and smallest points in the region to see if the location above is in there
@@ -94,9 +95,14 @@ public class BlueprintBuilder implements Listener {
 						minY = regionMinPoint.getY(), maxY = regionMaxPoint.getY(),
 						minZ = regionMinPoint.getZ(), maxZ = regionMaxPoint.getZ();
 
-				//Checks if any of the schematic blocks would be in a world guard claim.
-				if (minX <= x && x <= maxX && minY <= y && y <= maxY && minZ <= z && z <= maxZ && !player.isOp()) {
-					return true;
+				for (Location location : locationList) {
+					double x = location.getX();
+					double y = location.getY();
+					double z = location.getZ();
+					//Checks if any of the schematic blocks would be in a world guard claim.
+					if (minX <= x && x <= maxX && minY <= y && y <= maxY && minZ <= z && z <= maxZ && !player.isOp()) {
+						return true;
+					}
 				}
 			}
 		return false;
@@ -121,6 +127,7 @@ public class BlueprintBuilder implements Listener {
 				entry.getValue().sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
 			originalBlockMap.clear();
 		};
+		ArrayList<Location> locationList = new ArrayList<>();
 
 		if (blueprintsPlugin.schematicCache().getSchematicFor(item) != null) {
 			//Store the schematic from the block in a variable, and set the blueprint block to air so it cannot be duped.
@@ -190,30 +197,32 @@ public class BlueprintBuilder implements Listener {
 					for (double y = minPoint.getY(); y <= maxPoint.getY(); y++) {
 						for (double z = minPoint.getZ(); z <= maxPoint.getZ(); z++) {
 
-							//Location of the block in the certain iteration
-							Location location = new Location(event.getBlockPlaced().getWorld(), x, y, z);
-
-							//Getting every world guard region in the world to check if ANY of the schematic will be placed in an admin claim,
-							//because we don't want that.
-							if (checkAdminClaim(x, y, z, player, regions)) {
-								Common.tell(player, adminClaim);
-								if (Settings.PLAY_SOUNDS)
-									player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
-								event.setCancelled(true);
-								return;
-							}
-
-							//If there is a block in the way of where the schematic would place, disable the placement
-							//and send a "ghost block" to the player that is defined in the configuration.
-							if (!event.isCancelled() && !location.getBlock().getType().equals(Material.AIR) && Settings.Block.NO_PLACE_BLOCK_IN_WAY) {
-								if (!originalBlockMap.containsKey(location))
-									originalBlockMap.put(location, player);
-								if (Settings.Block.SHOW_ERROR_PREVIEW)
-									player.sendBlockChange(location, Settings.Block.ERROR_BLOCK.createBlockData());
-							}
+							locationList.add(new Location(event.getBlockPlaced().getWorld(), x, y, z));
 						}
 					}
 				}
+
+				//Getting every world guard region in the world to check if ANY of the schematic will be placed in an admin claim,
+				//because we don't want that.
+				if (checkAdminClaim(locationList, player, regions)) {
+					Common.tell(player, adminClaim);
+					if (Settings.PLAY_SOUNDS)
+						player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+					event.setCancelled(true);
+					return;
+				}
+
+				//If there is a block in the way of where the schematic would place, disable the placement
+				//and send a "ghost block" to the player that is defined in the configuration.
+				for (Location location : locationList)
+					if (!event.isCancelled() && !location.getBlock().getType().equals(Material.AIR) && Settings.Block.NO_PLACE_BLOCK_IN_WAY) {
+						if (!originalBlockMap.containsKey(location))
+							originalBlockMap.put(location, player);
+						if (Settings.Block.SHOW_ERROR_PREVIEW)
+							player.sendBlockChange(location, Settings.Block.ERROR_BLOCK.createBlockData());
+					}
+
+
 			}
 
 			//If there are no blocks blocking, and nothing has cancelled the event, we are good to paste the schematic!
