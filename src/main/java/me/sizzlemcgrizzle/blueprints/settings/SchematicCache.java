@@ -22,6 +22,9 @@ public class SchematicCache {
 
 	private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
 
+	/*
+	 * Adds a blueprint from a string (the schematic file name) and a block (item in hand).
+	 */
 	public String addBlueprint(String schematic, ItemStack blueprint) throws IOException, InvalidConfigurationException {
 		String success = Settings.Messages.MESSAGE_PREFIX + "&7You successfully added a blueprint with name " + blueprint.getItemMeta().getDisplayName() + " &7calling schematic &d" + schematic;
 		String failure = Settings.Messages.MESSAGE_PREFIX + "&cThere is no such file '&4" + schematic + "&c'. Please add the schematic to the Schematics folder.";
@@ -52,10 +55,12 @@ public class SchematicCache {
 		return success;
 	}
 
+	/*
+	 * (Used in BlueprintBuilder) Gets the schematic for a given block/item.
+	 */
 	public String getSchematicFor(ItemStack item) throws IOException, InvalidConfigurationException {
 		config.load(file);
 		String schematicPut = null;
-		ItemStack itemPut = null;
 
 		if (!item.getItemMeta().getDisplayName().equals("")) {
 			ConfigurationSection configSection = config.getConfigurationSection(item.getItemMeta().getDisplayName());
@@ -70,6 +75,9 @@ public class SchematicCache {
 		return schematicPut;
 	}
 
+	/*
+	 * Removes a blueprint from a given item.
+	 */
 	public String removeBlueprint(ItemStack item) throws IOException, InvalidConfigurationException {
 		String failure = Settings.Messages.MESSAGE_PREFIX + "&cA blueprint for this item does not exist.";
 
@@ -90,6 +98,9 @@ public class SchematicCache {
 			return failure;
 	}
 
+	/*
+	 * Returns a map of all blueprints.
+	 */
 	public HashMap<ItemStack, String> listBlueprints() throws IOException, InvalidConfigurationException {
 		listBlueprintMap.clear();
 		config.load(file);
@@ -101,6 +112,10 @@ public class SchematicCache {
 
 	}
 
+	/*
+	 * Gets the blueprint item for a given schematic file. If there are multiple blueprints
+	 * using one file, then both are returned.
+	 */
 	public List<ItemStack> getBlueprint(String schematic) throws IOException, InvalidConfigurationException {
 		ArrayList<ItemStack> returnItem = new ArrayList<>();
 		config.load(file);
