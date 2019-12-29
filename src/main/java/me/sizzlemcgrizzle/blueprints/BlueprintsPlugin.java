@@ -41,7 +41,6 @@ public class BlueprintsPlugin extends SimplePlugin {
 	@Override
 	protected void onPluginReload() {
 		Bukkit.getPluginManager().callEvent(event);
-		this.schematicCache = new SchematicCache();
 	}
 
 	public SchematicCache schematicCache() {

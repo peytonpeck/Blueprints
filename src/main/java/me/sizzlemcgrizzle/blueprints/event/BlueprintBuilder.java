@@ -58,7 +58,10 @@ public class BlueprintBuilder implements Listener {
 	private static String blocksInwayNoPreview = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_FALSE_MESSAGE;
 	private static String schematicFileNoExist = Settings.Messages.MESSAGE_PREFIX + "&cThis blueprint is not valid! Please contact an administrator if you think this is an error.";
 
-
+	/*
+	 * Gets the schematic from a given string inputted by the player. If the player places a block, it will check
+	 * which schematic this block uses.
+	 */
 	private Clipboard getSchematic(String schematic, Player player) {
 		Clipboard clipboard = null;
 		File file = new File(worldEditPlugin.getDataFolder().getAbsolutePath() + File.separator + "/schematics" + File.separator + "/" + schematic);
@@ -84,6 +87,9 @@ public class BlueprintBuilder implements Listener {
 		return clipboard;
 	}
 
+	/*
+	 * Checks if a certain location is in an admin claim.
+	 */
 	private Boolean checkAdminClaim(ArrayList<Location> locationList, Player player, RegionManager regions) {
 		if (Settings.Block.NO_PLACE_ADMIN_CLAIM && WorldGuardPlugin.inst().isEnabled())
 			for (Map.Entry<String, ProtectedRegion> region : regions.getRegions().entrySet()) {
@@ -108,13 +114,28 @@ public class BlueprintBuilder implements Listener {
 		return false;
 	}
 
+	/*
+	 * Returns a RegionManager that buildBlueprint will use
+	 */
 	private RegionManager getWorldGuardInformation(World world) {
 		RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
 		return container.get(new BukkitWorld(world));
 	}
 
+	/*
+	 * Clear all present error blocks.
+	 */
+	private void clearErrorBlocks() {
+		for (Map.Entry<Location, Player> entry : originalBlockMap.entrySet())
+			entry.getValue().sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
+		originalBlockMap.clear();
+	}
+
+	/*
+	 * Build the blueprint and check for all errors that may occur.
+	 */
 	@EventHandler
-	public void buildBlueprint(BlockPlaceEvent event) throws IOException, InvalidConfigurationException, WorldEditException {
+	private void buildBlueprint(BlockPlaceEvent event) throws IOException, InvalidConfigurationException, WorldEditException {
 		Player player = event.getPlayer();
 		ItemStack item = event.getItemInHand();
 		Block block = event.getBlockPlaced();
@@ -122,11 +143,6 @@ public class BlueprintBuilder implements Listener {
 		String schematic;
 		RegionManager regions = getWorldGuardInformation(world);
 		Clipboard clipboard;
-		Runnable runnable = () -> {
-			for (Map.Entry<Location, Player> entry : originalBlockMap.entrySet())
-				entry.getValue().sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
-			originalBlockMap.clear();
-		};
 		ArrayList<Location> locationList = new ArrayList<>();
 
 		if (blueprintsPlugin.schematicCache().getSchematicFor(item) != null) {
@@ -221,6 +237,7 @@ public class BlueprintBuilder implements Listener {
 						if (Settings.Block.SHOW_ERROR_PREVIEW)
 							player.sendBlockChange(location, Settings.Block.ERROR_BLOCK.createBlockData());
 					}
+				locationList.clear();
 
 
 			}
@@ -245,6 +262,8 @@ public class BlueprintBuilder implements Listener {
 
 
 				//Clear the "ghost blocks"
+				Runnable runnable = this::clearErrorBlocks;
+
 				if (Settings.Block.SHOW_ERROR_PREVIEW)
 					Common.runLater(Settings.Block.BLOCK_TIMEOUT * 20, runnable);
 				else
@@ -255,12 +274,13 @@ public class BlueprintBuilder implements Listener {
 
 	}
 
+	/*
+	 * On reload, clear all error blocks that may be present.
+	 */
 	@EventHandler
 	public void onReload(ReloadEvent event) {
 		if (originalBlockMap.size() == 0)
 			return;
-		for (Map.Entry<Location, Player> entry : originalBlockMap.entrySet())
-			entry.getValue().sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
-		originalBlockMap.clear();
+		clearErrorBlocks();
 	}
 }
