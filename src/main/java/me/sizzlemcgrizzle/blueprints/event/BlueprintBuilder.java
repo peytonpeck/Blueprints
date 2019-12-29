@@ -96,13 +96,15 @@ public class BlueprintBuilder implements Listener {
 
 				//Checks if any of the schematic blocks would be in a world guard claim.
 				if (minX <= x && x <= maxX && minY <= y && y <= maxY && minZ <= z && z <= maxZ && !player.isOp()) {
-					Common.tell(player, adminClaim);
-					if (Settings.PLAY_SOUNDS)
-						player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
 					return true;
 				}
 			}
 		return false;
+	}
+
+	private RegionManager getWorldGuardInformation(World world) {
+		RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+		return container.get(new BukkitWorld(world));
 	}
 
 	@EventHandler
@@ -111,131 +113,134 @@ public class BlueprintBuilder implements Listener {
 		ItemStack item = event.getItemInHand();
 		Block block = event.getBlockPlaced();
 		World world = player.getWorld();
+		String schematic;
+		RegionManager regions = getWorldGuardInformation(world);
+		Clipboard clipboard;
+		Runnable runnable = () -> {
+			for (Map.Entry<Location, Player> entry : originalBlockMap.entrySet())
+				entry.getValue().sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
+			originalBlockMap.clear();
+		};
 
 		if (blueprintsPlugin.schematicCache().getSchematicFor(item) != null) {
 			//Store the schematic from the block in a variable, and set the blueprint block to air so it cannot be duped.
-			String schematic = blueprintsPlugin.schematicCache().getSchematicFor(event.getItemInHand());
+			schematic = blueprintsPlugin.schematicCache().getSchematicFor(event.getItemInHand());
 			event.getBlockPlaced().setType(Material.AIR);
+			clipboard = getSchematic(schematic, player);
+		} else
+			return;
 
-			//"random" world guard/world edit information regarding getting the schematic and checking to see if it will be placed
-			//inside of a world guard claim.
-			RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-			RegionManager regions = container.get(new BukkitWorld(event.getPlayer().getWorld()));
+		//Creating the operation that will be used to place the schematic. Basically doing //copy on a build.
+		try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(event.getPlayer().getWorld()), -1)) {
 
-			//Creating the operation that will be used to place the schematic. Basically doing //copy on a build.
-			try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(event.getPlayer().getWorld()), -1)) {
+			//If a file in the schematics folder doesn't exist for this file, cancel the placement.
+			if (clipboard == null) {
+				Common.tell(player, schematicFileNoExist);
+				if (Settings.PLAY_SOUNDS)
+					player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+				event.setCancelled(true);
+				return;
+			}
 
-				//If a file in the schematics folder doesn't exist for this file, cancel the placement.
-				if (getSchematic(schematic, player) == null) {
-					Common.tell(player, schematicFileNoExist);
+			Operation operation = new ClipboardHolder(clipboard)
+					.createPaste(editSession)
+					.to(BlockVector3.at(block.getX(), block.getY(), block.getZ()))
+					.ignoreAirBlocks(true)
+					.copyEntities(false)
+					.copyBiomes(false)
+					.build();
+
+
+			//Get the max and min point of where the schematic will be placed. the blueprint will be the center of this.
+			Location maxPoint = new Location(world, block.getX() + clipboard.getDimensions().getX() / 2F,
+					block.getY() + clipboard.getDimensions().getY() - 1,
+					block.getZ() + clipboard.getDimensions().getZ() / 2F);
+			Location minPoint = new Location(world, block.getX() - clipboard.getDimensions().getX() / 2F,
+					block.getY(),
+					block.getZ() - clipboard.getDimensions().getZ() / 2F);
+
+			if (GriefPrevention.instance.isEnabled()) {
+				Claim claim = null;
+				//Get all the claims in the server
+				for (Claim eventClaim : GriefPrevention.instance.dataStore.getClaims()) {
+					if (eventClaim.contains(event.getBlockPlaced().getLocation(), true, true)) {
+						claim = eventClaim;
+						break;
+					}
+				}
+
+				if (claim == null && Settings.Block.NO_PLACE_OUTSIDE_CLAIMS) {
+					Common.tell(player, notInClaim);
 					if (Settings.PLAY_SOUNDS)
 						player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
 					event.setCancelled(true);
-					return;
-				}
 
-				Operation operation = new ClipboardHolder(getSchematic(schematic, player))
-						.createPaste(editSession)
-						.to(BlockVector3.at(event.getBlockPlaced().getX(), event.getBlockPlaced().getY(), event.getBlockPlaced().getZ()))
-						.ignoreAirBlocks(true)
-						.copyEntities(false)
-						.copyBiomes(false)
-						.build();
-
-
-				//Get the max and min point of where the schematic will be placed. the blueprint will be the center of this.
-				Location maxPoint = new Location(world, block.getX() + getSchematic(schematic, player).getDimensions().getX() / 2F,
-						block.getY() + getSchematic(schematic, player).getDimensions().getY() - 1,
-						block.getZ() + getSchematic(schematic, player).getDimensions().getZ() / 2F);
-				Location minPoint = new Location(world, block.getX() - getSchematic(schematic, player).getDimensions().getX() / 2F,
-						block.getY(),
-						block.getZ() - getSchematic(schematic, player).getDimensions().getZ() / 2F);
-
-				if (GriefPrevention.instance.isEnabled()) {
-					Claim claim = null;
-					//Get all the claims in the server
-					for (Claim eventClaim : GriefPrevention.instance.dataStore.getClaims()) {
-						if (eventClaim.contains(event.getBlockPlaced().getLocation(), true, true)) {
-							claim = eventClaim;
-							break;
-						}
-					}
-
-					if (claim == null && Settings.Block.NO_PLACE_OUTSIDE_CLAIMS) {
-						Common.tell(player, notInClaim);
+				} else if (claim != null && claim.allowEdit(player) != null && !event.isCancelled() && !player.isOp()) {
+					if (!claim.getOwnerName().equals(player.getName())) {
+						Common.tell(player, notTrusted);
 						if (Settings.PLAY_SOUNDS)
 							player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
 						event.setCancelled(true);
-
-					} else if (claim != null && claim.allowEdit(player) != null && !event.isCancelled() && !player.isOp()) {
-						if (!claim.getOwnerName().equals(player.getName())) {
-							Common.tell(player, notTrusted);
-							if (Settings.PLAY_SOUNDS)
-								player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
-							event.setCancelled(true);
-						}
 					}
 				}
-				if (!event.isCancelled()) {
-					//The three for loops below are iterating through EVERY block where the schematic will be placed
-					for (double x = minPoint.getX(); x <= maxPoint.getX(); x++) {
-						for (double y = minPoint.getY(); y <= maxPoint.getY(); y++) {
-							for (double z = minPoint.getZ(); z <= maxPoint.getZ(); z++) {
+			}
+			if (!event.isCancelled()) {
+				//The three for loops below are iterating through EVERY block where the schematic will be placed
+				for (double x = minPoint.getX(); x <= maxPoint.getX(); x++) {
+					for (double y = minPoint.getY(); y <= maxPoint.getY(); y++) {
+						for (double z = minPoint.getZ(); z <= maxPoint.getZ(); z++) {
 
-								//Location of the block in the certain iteration
-								Location location = new Location(event.getBlockPlaced().getWorld(), x, y, z);
+							//Location of the block in the certain iteration
+							Location location = new Location(event.getBlockPlaced().getWorld(), x, y, z);
 
-								//Getting every world guard region in the world to check if ANY of the schematic will be placed in an admin claim,
-								//because we don't want that.
-								if (checkAdminClaim(x, y, z, player, regions)) {
-									event.setCancelled(true);
-									return;
-								}
+							//Getting every world guard region in the world to check if ANY of the schematic will be placed in an admin claim,
+							//because we don't want that.
+							if (checkAdminClaim(x, y, z, player, regions)) {
+								Common.tell(player, adminClaim);
+								if (Settings.PLAY_SOUNDS)
+									player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+								event.setCancelled(true);
+								return;
+							}
 
-								//If there is a block in the way of where the schematic would place, disable the placement
-								//and send a "ghost block" to the player that is defined in the configuration.
-								if (!event.isCancelled() && !location.getBlock().getType().equals(Material.AIR) && Settings.Block.NO_PLACE_BLOCK_IN_WAY) {
-									if (!originalBlockMap.containsKey(location))
-										originalBlockMap.put(location, player);
-									if (Settings.Block.SHOW_ERROR_PREVIEW)
-										player.sendBlockChange(location, Settings.Block.ERROR_BLOCK.createBlockData());
-								}
+							//If there is a block in the way of where the schematic would place, disable the placement
+							//and send a "ghost block" to the player that is defined in the configuration.
+							if (!event.isCancelled() && !location.getBlock().getType().equals(Material.AIR) && Settings.Block.NO_PLACE_BLOCK_IN_WAY) {
+								if (!originalBlockMap.containsKey(location))
+									originalBlockMap.put(location, player);
+								if (Settings.Block.SHOW_ERROR_PREVIEW)
+									player.sendBlockChange(location, Settings.Block.ERROR_BLOCK.createBlockData());
 							}
 						}
 					}
 				}
+			}
 
-				//If there are no blocks blocking, and nothing has cancelled the event, we are good to paste the schematic!
-				if (originalBlockMap.size() == 0 && !event.isCancelled()) {
-					if (Settings.PLAY_SOUNDS)
-						player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
-					Common.tell(player, Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BUILD_SUCCESS);
-					Operations.complete(operation);
+			//If there are no blocks blocking, and nothing has cancelled the event, we are good to paste the schematic!
+			if (originalBlockMap.size() == 0 && !event.isCancelled()) {
+				if (Settings.PLAY_SOUNDS)
+					player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
+				Common.tell(player, Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BUILD_SUCCESS);
+				Operations.complete(operation);
 
-					//If there are blocks in the way, tell the player, and remove them in x amount of seconds.
-					//There are events set up to remove these blocks if someone interacts with them or tries to blow
-					//them up (basically trying to dupe them).
-				} else if (!event.isCancelled()) {
-					if (Settings.Block.SHOW_ERROR_PREVIEW)
-						Common.tell(player, blocksInWay);
-					else
-						Common.tell(player, blocksInwayNoPreview);
-					if (Settings.PLAY_SOUNDS)
-						player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
-					event.setCancelled(true);
+				//If there are blocks in the way, tell the player, and remove them in x amount of seconds.
+				//There are events set up to remove these blocks if someone interacts with them or tries to blow
+				//them up (basically trying to dupe them).
+			} else if (!event.isCancelled()) {
+				if (Settings.Block.SHOW_ERROR_PREVIEW)
+					Common.tell(player, blocksInWay);
+				else
+					Common.tell(player, blocksInwayNoPreview);
+				if (Settings.PLAY_SOUNDS)
+					player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
 
 
-					//Clear the "ghost blocks"
-					Runnable runnable = () -> {
-						for (Map.Entry<Location, Player> entry : originalBlockMap.entrySet())
-							entry.getValue().sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
-						originalBlockMap.clear();
-					};
-					if (Settings.Block.SHOW_ERROR_PREVIEW)
-						Common.runLater(Settings.Block.BLOCK_TIMEOUT * 20, runnable);
-					else
-						originalBlockMap.clear();
-				}
+				//Clear the "ghost blocks"
+				if (Settings.Block.SHOW_ERROR_PREVIEW)
+					Common.runLater(Settings.Block.BLOCK_TIMEOUT * 20, runnable);
+				else
+					originalBlockMap.clear();
+				event.setCancelled(true);
 			}
 		}
 
