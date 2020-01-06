@@ -319,7 +319,7 @@ public class BlueprintBuilder implements Listener {
 
 					@Override
 					public void run() {
-						if ((currentTime + 10000) <= System.currentTimeMillis()) {
+						if ((currentTime + 30000) <= System.currentTimeMillis()) {
 							player.getInventory().addItem(blueprint);
 							Common.tell(player, confirmationTimeout);
 							clearPreviewGhostBlocks(player);
