@@ -3,8 +3,10 @@ package me.sizzlemcgrizzle.blueprints.event;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
+import com.sk89q.worldedit.extent.AbstractDelegateExtent;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
@@ -13,6 +15,7 @@ import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
+import com.sk89q.worldedit.world.block.BlockStateHolder;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
@@ -26,13 +29,17 @@ import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.mineacademy.fo.Common;
+import org.mineacademy.fo.model.SimpleComponent;
 import org.mineacademy.fo.remain.CompSound;
 
 import java.io.File;
@@ -45,6 +52,12 @@ import java.util.Map;
 public class BlueprintBuilder implements Listener {
 
 	private HashMap<Location, Player> originalBlockMap = new HashMap<>();
+	private HashMap<Location, BlockData> ghostBlockMap = new HashMap<>();
+
+	private ArrayList<Player> blueprintPlacers = new ArrayList<>();
+
+	private boolean confirmPlacement = false;
+	private boolean denyPlacement = false;
 
 	private CLClans clans = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
 	private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
@@ -57,6 +70,8 @@ public class BlueprintBuilder implements Listener {
 	private static String blocksInWay = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_TRUE_MESSAGE;
 	private static String blocksInwayNoPreview = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_FALSE_MESSAGE;
 	private static String schematicFileNoExist = Settings.Messages.MESSAGE_PREFIX + "&cThis blueprint is not valid! Please contact an administrator if you think this is an error.";
+	private static String placementDenied = Settings.Messages.MESSAGE_PREFIX + "&eYou have cancelled the placement.";
+	private static String confirmationTimeout = Settings.Messages.MESSAGE_PREFIX + "&eThe placement confirmation has timed out.";
 
 	/*
 	 * Gets the schematic from a given string inputted by the player. If the player places a block, it will check
@@ -131,6 +146,14 @@ public class BlueprintBuilder implements Listener {
 		originalBlockMap.clear();
 	}
 
+	private void clearPreviewGhostBlocks(Player player) {
+		for (Map.Entry<Location, BlockData> entry : ghostBlockMap.entrySet()) {
+			if (entry.getValue().getMaterial() == entry.getKey().getBlock().getType())
+				player.sendBlockChange(entry.getKey(), entry.getValue());
+		}
+		ghostBlockMap.clear();
+	}
+
 	/*
 	 * Build the blueprint and check for all errors that may occur.
 	 */
@@ -165,14 +188,21 @@ public class BlueprintBuilder implements Listener {
 				return;
 			}
 
-			Operation operation = new ClipboardHolder(clipboard)
-					.createPaste(editSession)
-					.to(BlockVector3.at(block.getX(), block.getY(), block.getZ()))
-					.ignoreAirBlocks(true)
-					.copyEntities(false)
-					.copyBiomes(false)
-					.build();
 
+			//Schematic preview that will only send fake blocks to the player.
+			Operation previewOperation = new ClipboardHolder(clipboard).createPaste(new AbstractDelegateExtent(editSession) {
+				@Override
+				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) throws WorldEditException {
+					com.sk89q.worldedit.entity.Player wePlayer = BukkitAdapter.adapt(player);
+					wePlayer.sendFakeBlock(location, block);
+					return true;
+				}
+			})
+					.to(BlockVector3.at(block.getX(), block.getY(), block.getZ()))
+					.copyBiomes(false)
+					.copyEntities(false)
+					.ignoreAirBlocks(true)
+					.build();
 
 			//Get the max and min point of where the schematic will be placed. the blueprint will be the center of this.
 			Location maxPoint = new Location(world, block.getX() + clipboard.getDimensions().getX() / 2F,
@@ -213,7 +243,9 @@ public class BlueprintBuilder implements Listener {
 					for (double y = minPoint.getY(); y <= maxPoint.getY(); y++) {
 						for (double z = minPoint.getZ(); z <= maxPoint.getZ(); z++) {
 
-							locationList.add(new Location(event.getBlockPlaced().getWorld(), x, y, z));
+							Location location = new Location(event.getBlockPlaced().getWorld(), x, y, z);
+							locationList.add(location);
+							ghostBlockMap.put(location, location.getBlock().getBlockData());
 						}
 					}
 				}
@@ -239,20 +271,11 @@ public class BlueprintBuilder implements Listener {
 					}
 				locationList.clear();
 
-
 			}
-
-			//If there are no blocks blocking, and nothing has cancelled the event, we are good to paste the schematic!
-			if (originalBlockMap.size() == 0 && !event.isCancelled()) {
-				if (Settings.PLAY_SOUNDS)
-					player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
-				Common.tell(player, Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BUILD_SUCCESS);
-				Operations.complete(operation);
-
-				//If there are blocks in the way, tell the player, and remove them in x amount of seconds.
-				//There are events set up to remove these blocks if someone interacts with them or tries to blow
-				//them up (basically trying to dupe them).
-			} else if (!event.isCancelled()) {
+			//If there are blocks in the way, tell the player, and remove them in x amount of seconds.
+			//There are events set up to remove these blocks if someone interacts with them or tries to blow
+			//them up (basically trying to dupe them).
+			if (!event.isCancelled() && originalBlockMap.size() != 0) {
 				if (Settings.Block.SHOW_ERROR_PREVIEW)
 					Common.tell(player, blocksInWay);
 				else
@@ -270,8 +293,74 @@ public class BlueprintBuilder implements Listener {
 					originalBlockMap.clear();
 				event.setCancelled(true);
 			}
-		}
 
+			//If there are no blocks blocking, and nothing has cancelled the event, we will ask the user if they want to place
+			//the blueprint
+			if (originalBlockMap.size() == 0 && !event.isCancelled()) {
+				blueprintPlacers.add(player);
+
+				Operations.complete(previewOperation);
+				if (Settings.PLAY_SOUNDS)
+					player.playSound(player.getLocation(), CompSound.NOTE_PLING.getSound(), 1F, 1F);
+				SimpleComponent.of(Settings.Messages.MESSAGE_PREFIX + "&eDo you want to place this blueprint here?: ")
+						.append("&a&l[YES] ")
+						.onClickRunCmd("yes")
+						.onHover("&dClick me to confirm placement.")
+						.append("&c&l[NO]")
+						.onClickRunCmd("no")
+						.onHover("&dClick me to cancel placement.")
+						.send(player);
+
+				long currentTime = System.currentTimeMillis();
+				ItemStack blueprint = item.clone();
+				blueprint.setAmount(1);
+				//Check if the user has said yes or no, or nothing, and act upon it (this will place/not place the schematic)
+				new BukkitRunnable() {
+
+					@Override
+					public void run() {
+						if ((currentTime + 10000) <= System.currentTimeMillis()) {
+							player.getInventory().addItem(blueprint);
+							Common.tell(player, confirmationTimeout);
+							clearPreviewGhostBlocks(player);
+							blueprintPlacers.remove(player);
+							cancel();
+						}
+						if (confirmPlacement) {
+							clearPreviewGhostBlocks(player);
+							try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(event.getPlayer().getWorld()), -1)) {
+								//Schematic will be placed using this operation.
+								Operation operation = new ClipboardHolder(clipboard)
+										.createPaste(editSession)
+										.to(BlockVector3.at(block.getX(), block.getY(), block.getZ()))
+										.ignoreAirBlocks(true)
+										.copyEntities(false)
+										.copyBiomes(false)
+										.build();
+
+								Operations.complete(operation);
+								if (Settings.PLAY_SOUNDS)
+									player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
+								Common.tell(player, Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BUILD_SUCCESS);
+							} catch (WorldEditException e) {
+								e.printStackTrace();
+							}
+							confirmPlacement = false;
+							blueprintPlacers.remove(player);
+							cancel();
+						}
+						if (denyPlacement) {
+							player.getInventory().addItem(blueprint);
+							clearPreviewGhostBlocks(player);
+							Common.tell(player, placementDenied);
+							denyPlacement = false;
+							blueprintPlacers.remove(player);
+							cancel();
+						}
+					}
+				}.runTaskTimer(blueprintsPlugin, 10, 0);
+			}
+		}
 	}
 
 	/*
@@ -282,5 +371,21 @@ public class BlueprintBuilder implements Listener {
 		if (originalBlockMap.size() == 0)
 			return;
 		clearErrorBlocks();
+	}
+
+	/*
+	 * Simple listener for placement confirmation
+	 */
+	@EventHandler
+	public void confirmPlace(AsyncPlayerChatEvent event) {
+		if (blueprintPlacers.contains(event.getPlayer()))
+			if (event.getMessage().equalsIgnoreCase("yes")) {
+				confirmPlacement = true;
+				event.setCancelled(true);
+			} else if (event.getMessage().equalsIgnoreCase("no")) {
+				denyPlacement = true;
+				event.setCancelled(true);
+			}
+
 	}
 }
