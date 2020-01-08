@@ -3,6 +3,7 @@ package me.sizzlemcgrizzle.blueprints;
 import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandGroup;
 import me.sizzlemcgrizzle.blueprints.event.BlueprintBuilder;
 import me.sizzlemcgrizzle.blueprints.event.ReloadEvent;
+import me.sizzlemcgrizzle.blueprints.settings.Logs;
 import me.sizzlemcgrizzle.blueprints.settings.SchematicCache;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.Bukkit;
@@ -17,6 +18,7 @@ public class BlueprintsPlugin extends SimplePlugin {
 
 	private ReloadEvent event = new ReloadEvent();
 	private SchematicCache schematicCache;
+	private Logs logs;
 
 	@Override
 	public void onPluginStart() {
@@ -35,6 +37,7 @@ public class BlueprintsPlugin extends SimplePlugin {
 			Common.log("Successfully hooked into CLClans!");
 
 		this.schematicCache = new SchematicCache();
+		this.logs = new Logs();
 
 	}
 
@@ -45,6 +48,10 @@ public class BlueprintsPlugin extends SimplePlugin {
 
 	public SchematicCache schematicCache() {
 		return schematicCache;
+	}
+
+	public Logs logs() {
+		return logs;
 	}
 
 	@Override

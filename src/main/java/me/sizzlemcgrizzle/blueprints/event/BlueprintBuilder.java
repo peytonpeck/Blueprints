@@ -178,7 +178,7 @@ public class BlueprintBuilder implements Listener {
 			//Schematic preview that will only send fake blocks to the player.
 			Operation previewOperation = new ClipboardHolder(clipboard).createPaste(new AbstractDelegateExtent(editSession) {
 				@Override
-				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) throws WorldEditException {
+				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
 					com.sk89q.worldedit.entity.Player wePlayer = BukkitAdapter.adapt(player);
 					wePlayer.sendFakeBlock(location, block);
 					return true;
@@ -213,13 +213,15 @@ public class BlueprintBuilder implements Listener {
 					if (Settings.PLAY_SOUNDS)
 						player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
 					event.setCancelled(true);
+					return;
 
-				} else if (claim != null && claim.allowEdit(player) != null && !event.isCancelled() && !player.isOp()) {
+				} else if (claim != null && claim.allowBuild(player, block.getType()) != null) {
 					if (!claim.getOwnerName().equals(player.getName())) {
 						Common.tell(player, notTrusted);
 						if (Settings.PLAY_SOUNDS)
 							player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
 						event.setCancelled(true);
+						return;
 					}
 				}
 			}
@@ -278,11 +280,12 @@ public class BlueprintBuilder implements Listener {
 				else
 					originalBlockMap.clear();
 				event.setCancelled(true);
+				return;
 			}
 
 			//If there are no blocks blocking, and nothing has cancelled the event, we will ask the user if they want to place
 			//the blueprint
-			if (originalBlockMap.size() == 0 && !event.isCancelled()) {
+			if (originalBlockMap.size() == 0) {
 
 				if (player.isConversing()) {
 					Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&ePlease confirm/deny your existing placement before making a new one!");
@@ -301,7 +304,7 @@ public class BlueprintBuilder implements Listener {
 						.withLocalEcho(false)
 						.withModality(false)
 						.withTimeout(30)
-						.withFirstPrompt(new ConfirmationPrompt(player, item, ghostBlockMap, clipboard, block.getLocation()))
+						.withFirstPrompt(new ConfirmationPrompt(player, item, ghostBlockMap, clipboard, block.getLocation(), schematic))
 						.addConversationAbandonedListener(conversationAbandonedEvent -> {
 							if (!conversationAbandonedEvent.gracefulExit()) {
 								Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&eYour placement has been cancelled.");
@@ -310,6 +313,11 @@ public class BlueprintBuilder implements Listener {
 										player.sendBlockChange(entry.getKey(), entry.getValue());
 								}
 								ghostBlockMap.clear();
+								try {
+									blueprintsPlugin.logs().addToLogs(player, block.getLocation(), schematic, "abandoned");
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
 								player.getInventory().addItem(returnItem);
 							}
 						});

@@ -9,7 +9,9 @@ import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
+import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.data.BlockData;
@@ -22,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.remain.CompSound;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,13 +37,16 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 	private static String placementDenied = Settings.Messages.MESSAGE_PREFIX + "&eYou have cancelled the placement.";
 	private static String placementAccepted = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BUILD_SUCCESS;
 
+	private BlueprintsPlugin blueprintsPlugin = (BlueprintsPlugin) Bukkit.getPluginManager().getPlugin("Blueprints");
+
 	private Player player;
 	private ItemStack item;
 	private HashMap<Location, BlockData> ghostBlockMap;
 	private Clipboard clipboard;
 	private Location location;
+	private String schematic;
 
-	public ConfirmationPrompt(Player player, ItemStack item, HashMap<Location, BlockData> ghostBlockMap, Clipboard clipboard, Location location) {
+	public ConfirmationPrompt(Player player, ItemStack item, HashMap<Location, BlockData> ghostBlockMap, Clipboard clipboard, Location location, String schematic) {
 		super(ChatColor.YELLOW + "Do you want to place this blueprint here? Click:");
 
 		this.player = player;
@@ -49,6 +55,7 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 		this.ghostBlockMap = (HashMap<Location, BlockData>) ghostBlockMap.clone();
 		this.clipboard = clipboard;
 		this.location = location;
+		this.schematic = schematic;
 	}
 
 	@Override
@@ -69,16 +76,22 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 						.build();
 
 				Operations.complete(operation);
+				blueprintsPlugin.logs().addToLogs(player, location, schematic, "confirmed");
 				if (Settings.PLAY_SOUNDS)
 					player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
 				Common.tell(player, placementAccepted);
-			} catch (WorldEditException e) {
+			} catch (WorldEditException | IOException e) {
 				e.printStackTrace();
 			}
 		} else {
 			for (Map.Entry<Location, BlockData> entry : ghostBlockMap.entrySet()) {
 				if (entry.getValue().getMaterial() == entry.getKey().getBlock().getType())
 					player.sendBlockChange(entry.getKey(), entry.getValue());
+			}
+			try {
+				blueprintsPlugin.logs().addToLogs(player, location, schematic, "denied");
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 			ghostBlockMap.clear();
 			player.getInventory().addItem(item);
