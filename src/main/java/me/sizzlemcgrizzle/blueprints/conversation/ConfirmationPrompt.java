@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public class ConfirmationPrompt extends ClickableBooleanPrompt {
 
-	private static String placementDenied = Settings.Messages.MESSAGE_PREFIX + "&eYou have cancelled the placement.";
+	private static String placementDenied = Settings.Messages.MESSAGE_PREFIX + "&eYou have cancelled the placement and your item has been returned.";
 	private static String placementAccepted = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BUILD_SUCCESS;
 
 	private BlueprintsPlugin blueprintsPlugin = (BlueprintsPlugin) Bukkit.getPluginManager().getPlugin("Blueprints");
@@ -101,6 +101,8 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 			bossBar.removePlayer(player);
 			player.getInventory().addItem(item);
 			Common.tell(player, placementDenied);
+			if (Settings.PLAY_SOUNDS)
+				player.playSound(player.getLocation(), CompSound.LEVEL_UP.getSound(), 1F, 0.7F);
 
 
 		}

@@ -326,7 +326,7 @@ public class BlueprintBuilder implements Listener {
 						bossBar.setProgress(secondsLeft / 30.0);
 						secondsLeft -= 0.05;
 					}
-				}.runTaskTimerAsynchronously(blueprintsPlugin, 0, 1);
+				}.runTaskTimer(blueprintsPlugin, 0, 1);
 
 				ConversationFactory conversation = new ConversationFactory(blueprintsPlugin)
 						.withLocalEcho(false)
