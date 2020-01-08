@@ -32,6 +32,10 @@ import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarFlag;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationFactory;
@@ -40,12 +44,15 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.remain.CompSound;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -295,16 +302,37 @@ public class BlueprintBuilder implements Listener {
 				Operations.complete(previewOperation);
 
 				if (Settings.PLAY_SOUNDS)
-					player.playSound(player.getLocation(), CompSound.NOTE_PLING.getSound(), 1F, 1F);
+					player.playSound(player.getLocation(), CompSound.NOTE_BASS.getSound(), 2.0F, 0.8F);
 
 				ItemStack returnItem = item.clone();
 				returnItem.setAmount(1);
+
+				BossBar bossBar = blueprintsPlugin.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SEGMENTED_12, BarFlag.CREATE_FOG);
+				bossBar.addPlayer(player);
+				bossBar.setVisible(true);
+
+				DecimalFormat format = new DecimalFormat("##.00");
+				BukkitTask runnable = new BukkitRunnable() {
+					double secondsLeft = 30.0;
+
+					@Override
+					public void run() {
+						secondsLeft = Math.round(secondsLeft * 100.0) / 100.0;
+						if (secondsLeft == 0.0)
+							cancel();
+						if (secondsLeft % 2.5 == 0 && secondsLeft != 30.0 && Settings.PLAY_SOUNDS)
+							player.playSound(player.getLocation(), CompSound.NOTE_BASS.getSound(), 2.0F, 0.8F);
+						bossBar.setTitle(ChatColor.GREEN + "Confirm Placement - " + format.format(secondsLeft) + " seconds left");
+						bossBar.setProgress(secondsLeft / 30.0);
+						secondsLeft -= 0.05;
+					}
+				}.runTaskTimerAsynchronously(blueprintsPlugin, 0, 1);
 
 				ConversationFactory conversation = new ConversationFactory(blueprintsPlugin)
 						.withLocalEcho(false)
 						.withModality(false)
 						.withTimeout(30)
-						.withFirstPrompt(new ConfirmationPrompt(player, item, ghostBlockMap, clipboard, block.getLocation(), schematic))
+						.withFirstPrompt(new ConfirmationPrompt(player, item, ghostBlockMap, clipboard, block.getLocation(), schematic, bossBar))
 						.addConversationAbandonedListener(conversationAbandonedEvent -> {
 							if (!conversationAbandonedEvent.gracefulExit()) {
 								Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&eYour placement has been cancelled.");
@@ -313,6 +341,7 @@ public class BlueprintBuilder implements Listener {
 										player.sendBlockChange(entry.getKey(), entry.getValue());
 								}
 								ghostBlockMap.clear();
+								bossBar.removePlayer(player);
 								try {
 									blueprintsPlugin.logs().addToLogs(player, block.getLocation(), schematic, "abandoned");
 								} catch (IOException e) {
@@ -320,6 +349,7 @@ public class BlueprintBuilder implements Listener {
 								}
 								player.getInventory().addItem(returnItem);
 							}
+							runnable.cancel();
 						});
 				Conversation convo = conversation.buildConversation(new FormattedConversable(player));
 				convo.begin();

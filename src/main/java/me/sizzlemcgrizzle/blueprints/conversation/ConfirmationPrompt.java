@@ -15,6 +15,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.boss.BossBar;
 import org.bukkit.conversations.ConversationContext;
 import org.bukkit.conversations.Prompt;
 import org.bukkit.entity.Player;
@@ -45,8 +46,9 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 	private Clipboard clipboard;
 	private Location location;
 	private String schematic;
+	private BossBar bossBar;
 
-	public ConfirmationPrompt(Player player, ItemStack item, HashMap<Location, BlockData> ghostBlockMap, Clipboard clipboard, Location location, String schematic) {
+	public ConfirmationPrompt(Player player, ItemStack item, HashMap<Location, BlockData> ghostBlockMap, Clipboard clipboard, Location location, String schematic, BossBar bossBar) {
 		super(ChatColor.YELLOW + "Do you want to place this blueprint here? Click:");
 
 		this.player = player;
@@ -56,6 +58,7 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 		this.clipboard = clipboard;
 		this.location = location;
 		this.schematic = schematic;
+		this.bossBar = bossBar;
 	}
 
 	@Override
@@ -77,6 +80,7 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 
 				Operations.complete(operation);
 				blueprintsPlugin.logs().addToLogs(player, location, schematic, "confirmed");
+				bossBar.removePlayer(player);
 				if (Settings.PLAY_SOUNDS)
 					player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
 				Common.tell(player, placementAccepted);
@@ -94,6 +98,7 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 				e.printStackTrace();
 			}
 			ghostBlockMap.clear();
+			bossBar.removePlayer(player);
 			player.getInventory().addItem(item);
 			Common.tell(player, placementDenied);
 
