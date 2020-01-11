@@ -117,6 +117,9 @@ public class BlueprintBuilder implements Listener {
 		String schematic;
 		Clipboard clipboard;
 
+		/*
+		 * Is there a blueprint in the file for this block?
+		 */
 		if (blueprintsPlugin.schematicCache().getSchematicFor(item) != null) {
 			//Store the schematic from the block in a variable, and set the blueprint block to air so it cannot be duped.
 			schematic = blueprintsPlugin.schematicCache().getSchematicFor(event.getItemInHand());
@@ -125,6 +128,9 @@ public class BlueprintBuilder implements Listener {
 		} else
 			return;
 
+		/*
+		 * Check if the block's location is not in a claim.
+		 */
 		if (GriefPrevention.instance.isEnabled()) {
 			Claim claim = null;
 			for (Claim c : GriefPrevention.instance.dataStore.getClaims())
@@ -139,6 +145,9 @@ public class BlueprintBuilder implements Listener {
 			}
 		}
 
+		/*
+		 * If there are any error blocks present, remove them.
+		 */
 		if (fakeBlockMap.size() != 0)
 			clearFakeBlocks();
 
@@ -154,11 +163,13 @@ public class BlueprintBuilder implements Listener {
 				return;
 			}
 
+			/*
+			 * Get all the blocks that will be placed by the blueprint. These will be checked for air later.
+			 */
 			Operation testOperation = new ClipboardHolder(clipboard).createPaste(new AbstractDelegateExtent(editSession) {
 				@Override
 				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
 					Location pasteLocation = new Location(event.getBlockPlaced().getWorld(), location.getX(), location.getY(), location.getZ());
-					pasteLocation.getBlock().setType(pasteLocation.getBlock().getType());
 					pasteBlockList.add(pasteLocation);
 					return true;
 				}
@@ -172,6 +183,10 @@ public class BlueprintBuilder implements Listener {
 			Operations.complete(testOperation);
 
 
+			/*
+			 * Check all of the blocks that will be pasted an determine if they aren't air or
+			 * they are in the list of ignored blocks.
+			 */
 			Iterator<Location> pasteIterator = pasteBlockList.iterator();
 			while (pasteIterator.hasNext()) {
 				Location location = pasteIterator.next();
@@ -183,7 +198,9 @@ public class BlueprintBuilder implements Listener {
 				}
 			}
 
-
+			/*
+			 * Send the player a message if there are error blocks present
+			 */
 			if (fakeBlockMap.size() != 0) {
 				if (Settings.Block.SHOW_ERROR_PREVIEW)
 					Common.tell(player, blocksInWay);
@@ -193,7 +210,9 @@ public class BlueprintBuilder implements Listener {
 					player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
 
 
-				//Clear the "ghost blocks"
+				/*
+				 * Clear the ghost blocks
+				 */
 				Runnable runnable = this::clearFakeBlocks;
 
 				if (Settings.Block.SHOW_ERROR_PREVIEW)
@@ -204,15 +223,18 @@ public class BlueprintBuilder implements Listener {
 				return;
 			}
 
-			//If there are no blocks blocking, and nothing has cancelled the event, we will ask the user if they want to place
-			//the blueprint
-
+			/*
+			 * If the player is already conversing, cancel the placement.
+			 */
 			if (player.isConversing()) {
 				Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&ePlease confirm/deny your existing placement before making a new one!");
 				event.setCancelled(true);
 				return;
 			}
-			//Schematic preview that will only send fake blocks to the player.
+
+			/*
+			 * Operation to send fake blocks to the player as a preview
+			 */
 			Operation previewOperation = new ClipboardHolder(clipboard).createPaste(new AbstractDelegateExtent(editSession) {
 				@Override
 				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
@@ -232,9 +254,11 @@ public class BlueprintBuilder implements Listener {
 			if (Settings.PLAY_SOUNDS)
 				player.playSound(player.getLocation(), CompSound.NOTE_BASS.getSound(), 2.0F, 0.8F);
 
+			//Item to return, as we can't cancel the event from another class.
 			ItemStack returnItem = item.clone();
 			returnItem.setAmount(1);
 
+			//Bossbar for countdown
 			BossBar bossBar = blueprintsPlugin.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SEGMENTED_12, BarFlag.CREATE_FOG);
 			bossBar.addPlayer(player);
 			bossBar.setVisible(true);
