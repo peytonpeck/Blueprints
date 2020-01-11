@@ -274,7 +274,7 @@ public class BlueprintBuilder implements Listener {
 						cancel();
 					if (secondsLeft % 2.5 == 0 && secondsLeft != 30.0 && Settings.PLAY_SOUNDS)
 						player.playSound(player.getLocation(), CompSound.NOTE_BASS.getSound(), 2.0F, 0.8F);
-					bossBar.setTitle(ChatColor.GREEN + "Confirm Placement - " + format.format(secondsLeft) + " seconds left");
+					bossBar.setTitle(ChatColor.GREEN + "Confirm Placement - " + ChatColor.RED + format.format(secondsLeft) + ChatColor.GREEN + " seconds left");
 					bossBar.setProgress(secondsLeft / 30.0);
 					secondsLeft -= 0.05;
 				}
