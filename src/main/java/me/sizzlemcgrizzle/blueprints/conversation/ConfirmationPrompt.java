@@ -14,7 +14,6 @@ import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.BossBar;
 import org.bukkit.conversations.ConversationContext;
 import org.bukkit.conversations.Prompt;
@@ -42,19 +41,19 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 
 	private Player player;
 	private ItemStack item;
-	private HashMap<Location, BlockData> ghostBlockMap;
+	private HashMap<Location, Player> pasteFakeBlockMap;
 	private Clipboard clipboard;
 	private Location location;
 	private String schematic;
 	private BossBar bossBar;
 
-	public ConfirmationPrompt(Player player, ItemStack item, HashMap<Location, BlockData> ghostBlockMap, Clipboard clipboard, Location location, String schematic, BossBar bossBar) {
+	public ConfirmationPrompt(Player player, ItemStack item, HashMap<Location, Player> ghostBlockMap, Clipboard clipboard, Location location, String schematic, BossBar bossBar) {
 		super(ChatColor.YELLOW + "Do you want to place this blueprint here? Click:");
 
 		this.player = player;
 		this.item = item.clone();
 		this.item.setAmount(1);
-		this.ghostBlockMap = (HashMap<Location, BlockData>) ghostBlockMap.clone();
+		this.pasteFakeBlockMap = (HashMap<Location, Player>) ghostBlockMap.clone();
 		this.clipboard = clipboard;
 		this.location = location;
 		this.schematic = schematic;
@@ -64,11 +63,10 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 	@Override
 	protected @Nullable Prompt acceptValidatedInput(@NotNull ConversationContext conversationContext, boolean input) {
 		if (input) {
-			for (Map.Entry<Location, BlockData> entry : ghostBlockMap.entrySet()) {
-				if (entry.getValue().getMaterial() == entry.getKey().getBlock().getType())
-					player.sendBlockChange(entry.getKey(), entry.getValue());
+			for (Map.Entry<Location, Player> entry : pasteFakeBlockMap.entrySet()) {
+				player.sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
 			}
-			ghostBlockMap.clear();
+			pasteFakeBlockMap.clear();
 			try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(location.getWorld()), -1)) {
 				Operation operation = new ClipboardHolder(clipboard)
 						.createPaste(editSession)
@@ -88,16 +86,15 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 				e.printStackTrace();
 			}
 		} else {
-			for (Map.Entry<Location, BlockData> entry : ghostBlockMap.entrySet()) {
-				if (entry.getValue().getMaterial() == entry.getKey().getBlock().getType())
-					player.sendBlockChange(entry.getKey(), entry.getValue());
+			for (Map.Entry<Location, Player> entry : pasteFakeBlockMap.entrySet()) {
+				player.sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
 			}
 			try {
 				blueprintsPlugin.logs().addToLogs(player, location, schematic, "denied");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			ghostBlockMap.clear();
+			pasteFakeBlockMap.clear();
 			bossBar.removePlayer(player);
 			player.getInventory().addItem(item);
 			Common.tell(player, placementDenied);

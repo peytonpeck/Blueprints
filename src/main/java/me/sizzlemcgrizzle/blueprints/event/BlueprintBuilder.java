@@ -17,11 +17,6 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
 import com.sk89q.worldedit.world.block.BlockTypes;
-import com.sk89q.worldguard.WorldGuard;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-import com.sk89q.worldguard.protection.managers.RegionManager;
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import com.sk89q.worldguard.protection.regions.RegionContainer;
 import de.craftlancer.clclans.CLClans;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
@@ -31,7 +26,6 @@ import me.sizzlemcgrizzle.blueprints.conversation.FormattedConversable;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
@@ -41,6 +35,7 @@ import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationFactory;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
@@ -55,12 +50,14 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class BlueprintBuilder implements Listener {
 
-	private HashMap<Location, Player> originalBlockMap = new HashMap<>();
-	private HashMap<Location, BlockData> ghostBlockMap = new HashMap<>();
+	private ArrayList<Location> pasteBlockList = new ArrayList<>();
+	private HashMap<Location, Player> fakeBlockMap = new HashMap<>();
+	private HashMap<Location, Player> pasteFakeBlockmap = new HashMap<>();
 
 	private CLClans clans = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
 	private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
@@ -68,8 +65,6 @@ public class BlueprintBuilder implements Listener {
 
 	//Messages for states of placing the schematic
 	private static String notInClaim = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BLUEPRINT_NOT_IN_CLAIM;
-	private static String notTrusted = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.PLAYER_NOT_TRUSTED;
-	private static String adminClaim = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BLUEPRINT_IN_ADMIN_CLAIM;
 	private static String blocksInWay = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_TRUE_MESSAGE;
 	private static String blocksInwayNoPreview = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_FALSE_MESSAGE;
 	private static String schematicFileNoExist = Settings.Messages.MESSAGE_PREFIX + "&cThis blueprint is not valid! Please contact an administrator if you think this is an error.";
@@ -103,63 +98,24 @@ public class BlueprintBuilder implements Listener {
 		return clipboard;
 	}
 
-	/*
-	 * Checks if a certain location is in an admin claim.
-	 */
-	private Boolean checkAdminClaim(ArrayList<Location> locationList, Player player, RegionManager regions) {
-		if (Settings.Block.NO_PLACE_ADMIN_CLAIM && WorldGuardPlugin.inst().isEnabled())
-			for (Map.Entry<String, ProtectedRegion> region : regions.getRegions().entrySet()) {
-				//Getting the biggest and smallest points in the region to see if the location above is in there
-				BlockVector3 regionMinPoint = region.getValue().getMinimumPoint();
-				BlockVector3 regionMaxPoint = region.getValue().getMaximumPoint();
-				//Variables defined to shorten the lenght of the if statement
-				double minX = regionMinPoint.getX(), maxX = regionMaxPoint.getX(),
-						minY = regionMinPoint.getY(), maxY = regionMaxPoint.getY(),
-						minZ = regionMinPoint.getZ(), maxZ = regionMaxPoint.getZ();
-
-				for (Location location : locationList) {
-					double x = location.getX();
-					double y = location.getY();
-					double z = location.getZ();
-					//Checks if any of the schematic blocks would be in a world guard claim.
-					if (minX <= x && x <= maxX && minY <= y && y <= maxY && minZ <= z && z <= maxZ && !player.isOp()) {
-						return true;
-					}
-				}
-			}
-		return false;
-	}
-
-	/*
-	 * Returns a RegionManager that buildBlueprint will use
-	 */
-	private RegionManager getWorldGuardInformation(World world) {
-		RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-		return container.get(new BukkitWorld(world));
-	}
-
-	/*
-	 * Clear all present error blocks.
-	 */
-	private void clearErrorBlocks() {
-		for (Map.Entry<Location, Player> entry : originalBlockMap.entrySet())
+	private void clearFakeBlocks() {
+		for (Map.Entry<Location, Player> entry : fakeBlockMap.entrySet()) {
 			entry.getValue().sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
-		originalBlockMap.clear();
+		}
+		fakeBlockMap.clear();
 	}
 
 	/*
 	 * Build the blueprint and check for all errors that may occur.
 	 */
-	@EventHandler
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	private void buildBlueprint(BlockPlaceEvent event) throws IOException, InvalidConfigurationException, WorldEditException {
 		Player player = event.getPlayer();
 		ItemStack item = event.getItemInHand();
 		Block block = event.getBlockPlaced();
 		World world = player.getWorld();
 		String schematic;
-		RegionManager regions = getWorldGuardInformation(world);
 		Clipboard clipboard;
-		ArrayList<Location> locationList = new ArrayList<>();
 
 		if (blueprintsPlugin.schematicCache().getSchematicFor(item) != null) {
 			//Store the schematic from the block in a variable, and set the blueprint block to air so it cannot be duped.
@@ -168,6 +124,23 @@ public class BlueprintBuilder implements Listener {
 			clipboard = getSchematic(schematic, player);
 		} else
 			return;
+
+		if (GriefPrevention.instance.isEnabled()) {
+			Claim claim = null;
+			for (Claim c : GriefPrevention.instance.dataStore.getClaims())
+				if (c.contains(block.getLocation(), true, false))
+					claim = c;
+			if (claim == null) {
+				Common.tell(player, notInClaim);
+				if (Settings.PLAY_SOUNDS)
+					player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+				event.setCancelled(true);
+				return;
+			}
+		}
+
+		if (fakeBlockMap.size() != 0)
+			clearFakeBlocks();
 
 		//Creating the operation that will be used to place the schematic. Basically doing //copy on a build.
 		try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(event.getPlayer().getWorld()), -1)) {
@@ -181,13 +154,12 @@ public class BlueprintBuilder implements Listener {
 				return;
 			}
 
-
-			//Schematic preview that will only send fake blocks to the player.
-			Operation previewOperation = new ClipboardHolder(clipboard).createPaste(new AbstractDelegateExtent(editSession) {
+			Operation testOperation = new ClipboardHolder(clipboard).createPaste(new AbstractDelegateExtent(editSession) {
 				@Override
 				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
-					com.sk89q.worldedit.entity.Player wePlayer = BukkitAdapter.adapt(player);
-					wePlayer.sendFakeBlock(location, block);
+					Location pasteLocation = new Location(event.getBlockPlaced().getWorld(), location.getX(), location.getY(), location.getZ());
+					pasteLocation.getBlock().setType(pasteLocation.getBlock().getType());
+					pasteBlockList.add(pasteLocation);
 					return true;
 				}
 			})
@@ -197,80 +169,22 @@ public class BlueprintBuilder implements Listener {
 					.ignoreAirBlocks(true)
 					.build();
 
-			//Get the max and min point of where the schematic will be placed. the blueprint will be the center of this.
-			Location maxPoint = new Location(world, block.getX() + clipboard.getDimensions().getX() / 2F,
-					block.getY() + clipboard.getDimensions().getY() - 1,
-					block.getZ() + clipboard.getDimensions().getZ() / 2F);
-			Location minPoint = new Location(world, block.getX() - clipboard.getDimensions().getX() / 2F,
-					block.getY(),
-					block.getZ() - clipboard.getDimensions().getZ() / 2F);
+			Operations.complete(testOperation);
 
-			if (GriefPrevention.instance.isEnabled()) {
-				Claim claim = null;
-				//Get all the claims in the server
-				for (Claim eventClaim : GriefPrevention.instance.dataStore.getClaims()) {
-					if (eventClaim.contains(event.getBlockPlaced().getLocation(), true, true)) {
-						claim = eventClaim;
-						break;
-					}
-				}
 
-				if (claim == null && Settings.Block.NO_PLACE_OUTSIDE_CLAIMS) {
-					Common.tell(player, notInClaim);
-					if (Settings.PLAY_SOUNDS)
-						player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
-					event.setCancelled(true);
-					return;
-
-				} else if (claim != null && claim.allowBuild(player, block.getType()) != null) {
-					if (!claim.getOwnerName().equals(player.getName())) {
-						Common.tell(player, notTrusted);
-						if (Settings.PLAY_SOUNDS)
-							player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
-						event.setCancelled(true);
-						return;
-					}
+			Iterator<Location> pasteIterator = pasteBlockList.iterator();
+			while (pasteIterator.hasNext()) {
+				Location location = pasteIterator.next();
+				if (!location.getBlock().getType().equals(Material.AIR) && !Settings.Block.IGNORE_BLOCKS.contains(location.getBlock().getType())) {
+					fakeBlockMap.put(location, player);
+					if (Settings.Block.SHOW_ERROR_PREVIEW)
+						player.sendBlockChange(location, Settings.Block.ERROR_BLOCK.createBlockData());
+					pasteIterator.remove();
 				}
 			}
-			if (!event.isCancelled()) {
-				//The three for loops below are iterating through EVERY block where the schematic will be placed
-				for (double x = minPoint.getX(); x <= maxPoint.getX(); x++) {
-					for (double y = minPoint.getY(); y <= maxPoint.getY(); y++) {
-						for (double z = minPoint.getZ(); z <= maxPoint.getZ(); z++) {
 
-							Location location = new Location(event.getBlockPlaced().getWorld(), x, y, z);
-							locationList.add(location);
-							ghostBlockMap.put(location, location.getBlock().getBlockData());
-						}
-					}
-				}
 
-				//Getting every world guard region in the world to check if ANY of the schematic will be placed in an admin claim,
-				//because we don't want that.
-				if (checkAdminClaim(locationList, player, regions)) {
-					Common.tell(player, adminClaim);
-					if (Settings.PLAY_SOUNDS)
-						player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
-					event.setCancelled(true);
-					return;
-				}
-
-				//If there is a block in the way of where the schematic would place, disable the placement
-				//and send a "ghost block" to the player that is defined in the configuration.
-				for (Location location : locationList)
-					if (!event.isCancelled() && !location.getBlock().getType().equals(Material.AIR) && Settings.Block.NO_PLACE_BLOCK_IN_WAY) {
-						if (!originalBlockMap.containsKey(location))
-							originalBlockMap.put(location, player);
-						if (Settings.Block.SHOW_ERROR_PREVIEW)
-							player.sendBlockChange(location, Settings.Block.ERROR_BLOCK.createBlockData());
-					}
-				locationList.clear();
-
-			}
-			//If there are blocks in the way, tell the player, and remove them in x amount of seconds.
-			//There are events set up to remove these blocks if someone interacts with them or tries to blow
-			//them up (basically trying to dupe them).
-			if (!event.isCancelled() && originalBlockMap.size() != 0) {
+			if (fakeBlockMap.size() != 0) {
 				if (Settings.Block.SHOW_ERROR_PREVIEW)
 					Common.tell(player, blocksInWay);
 				else
@@ -280,80 +194,91 @@ public class BlueprintBuilder implements Listener {
 
 
 				//Clear the "ghost blocks"
-				Runnable runnable = this::clearErrorBlocks;
+				Runnable runnable = this::clearFakeBlocks;
 
 				if (Settings.Block.SHOW_ERROR_PREVIEW)
 					Common.runLater(Settings.Block.BLOCK_TIMEOUT * 20, runnable);
 				else
-					originalBlockMap.clear();
+					fakeBlockMap.clear();
 				event.setCancelled(true);
 				return;
 			}
 
 			//If there are no blocks blocking, and nothing has cancelled the event, we will ask the user if they want to place
 			//the blueprint
-			if (originalBlockMap.size() == 0) {
 
-				if (player.isConversing()) {
-					Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&ePlease confirm/deny your existing placement before making a new one!");
-					event.setCancelled(true);
-					return;
-				}
-				Operations.complete(previewOperation);
-
-				if (Settings.PLAY_SOUNDS)
-					player.playSound(player.getLocation(), CompSound.NOTE_BASS.getSound(), 2.0F, 0.8F);
-
-				ItemStack returnItem = item.clone();
-				returnItem.setAmount(1);
-
-				BossBar bossBar = blueprintsPlugin.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SEGMENTED_12, BarFlag.CREATE_FOG);
-				bossBar.addPlayer(player);
-				bossBar.setVisible(true);
-
-				DecimalFormat format = new DecimalFormat("##.00");
-				BukkitTask runnable = new BukkitRunnable() {
-					double secondsLeft = 30.0;
-
-					@Override
-					public void run() {
-						secondsLeft = Math.round(secondsLeft * 100.0) / 100.0;
-						if (secondsLeft == 0.0)
-							cancel();
-						if (secondsLeft % 2.5 == 0 && secondsLeft != 30.0 && Settings.PLAY_SOUNDS)
-							player.playSound(player.getLocation(), CompSound.NOTE_BASS.getSound(), 2.0F, 0.8F);
-						bossBar.setTitle(ChatColor.GREEN + "Confirm Placement - " + format.format(secondsLeft) + " seconds left");
-						bossBar.setProgress(secondsLeft / 30.0);
-						secondsLeft -= 0.05;
-					}
-				}.runTaskTimer(blueprintsPlugin, 0, 1);
-
-				ConversationFactory conversation = new ConversationFactory(blueprintsPlugin)
-						.withLocalEcho(false)
-						.withModality(false)
-						.withTimeout(30)
-						.withFirstPrompt(new ConfirmationPrompt(player, item, ghostBlockMap, clipboard, block.getLocation(), schematic, bossBar))
-						.addConversationAbandonedListener(conversationAbandonedEvent -> {
-							if (!conversationAbandonedEvent.gracefulExit()) {
-								Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&eYour placement has been cancelled.");
-								for (Map.Entry<Location, BlockData> entry : ghostBlockMap.entrySet()) {
-									if (entry.getValue().getMaterial() == entry.getKey().getBlock().getType())
-										player.sendBlockChange(entry.getKey(), entry.getValue());
-								}
-								ghostBlockMap.clear();
-								bossBar.removePlayer(player);
-								try {
-									blueprintsPlugin.logs().addToLogs(player, block.getLocation(), schematic, "abandoned");
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-								player.getInventory().addItem(returnItem);
-							}
-							runnable.cancel();
-						});
-				Conversation convo = conversation.buildConversation(new FormattedConversable(player));
-				convo.begin();
+			if (player.isConversing()) {
+				Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&ePlease confirm/deny your existing placement before making a new one!");
+				event.setCancelled(true);
+				return;
 			}
+			//Schematic preview that will only send fake blocks to the player.
+			Operation previewOperation = new ClipboardHolder(clipboard).createPaste(new AbstractDelegateExtent(editSession) {
+				@Override
+				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
+					com.sk89q.worldedit.entity.Player wePlayer = BukkitAdapter.adapt(player);
+					wePlayer.sendFakeBlock(location, block);
+					pasteFakeBlockmap.put(new Location(world, location.getX(), location.getY(), location.getZ()), player);
+					return true;
+				}
+			})
+					.to(BlockVector3.at(block.getX(), block.getY(), block.getZ()))
+					.copyBiomes(false)
+					.copyEntities(false)
+					.ignoreAirBlocks(true)
+					.build();
+			Operations.complete(previewOperation);
+
+			if (Settings.PLAY_SOUNDS)
+				player.playSound(player.getLocation(), CompSound.NOTE_BASS.getSound(), 2.0F, 0.8F);
+
+			ItemStack returnItem = item.clone();
+			returnItem.setAmount(1);
+
+			BossBar bossBar = blueprintsPlugin.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SEGMENTED_12, BarFlag.CREATE_FOG);
+			bossBar.addPlayer(player);
+			bossBar.setVisible(true);
+
+			DecimalFormat format = new DecimalFormat("##.00");
+			BukkitTask runnable = new BukkitRunnable() {
+				double secondsLeft = 30.0;
+
+				@Override
+				public void run() {
+					secondsLeft = Math.round(secondsLeft * 100.0) / 100.0;
+					if (secondsLeft == 0.0)
+						cancel();
+					if (secondsLeft % 2.5 == 0 && secondsLeft != 30.0 && Settings.PLAY_SOUNDS)
+						player.playSound(player.getLocation(), CompSound.NOTE_BASS.getSound(), 2.0F, 0.8F);
+					bossBar.setTitle(ChatColor.GREEN + "Confirm Placement - " + format.format(secondsLeft) + " seconds left");
+					bossBar.setProgress(secondsLeft / 30.0);
+					secondsLeft -= 0.05;
+				}
+			}.runTaskTimer(blueprintsPlugin, 0, 1);
+
+			ConversationFactory conversation = new ConversationFactory(blueprintsPlugin)
+					.withLocalEcho(false)
+					.withModality(false)
+					.withTimeout(30)
+					.withFirstPrompt(new ConfirmationPrompt(player, item, pasteFakeBlockmap, clipboard, block.getLocation(), schematic, bossBar))
+					.addConversationAbandonedListener(conversationAbandonedEvent -> {
+						if (!conversationAbandonedEvent.gracefulExit()) {
+							Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&eYour placement has been cancelled.");
+							for (Map.Entry<Location, Player> entry : pasteFakeBlockmap.entrySet()) {
+								player.sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
+							}
+							pasteFakeBlockmap.clear();
+							try {
+								blueprintsPlugin.logs().addToLogs(player, block.getLocation(), schematic, "abandoned");
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							player.getInventory().addItem(returnItem);
+						}
+						runnable.cancel();
+					});
+			Conversation convo = conversation.buildConversation(new FormattedConversable(player));
+			convo.begin();
 		}
 	}
 
@@ -362,8 +287,8 @@ public class BlueprintBuilder implements Listener {
 	 */
 	@EventHandler
 	public void onReload(ReloadEvent event) {
-		if (originalBlockMap.size() == 0)
+		if (fakeBlockMap.size() == 0)
 			return;
-		clearErrorBlocks();
+		clearFakeBlocks();
 	}
 }
