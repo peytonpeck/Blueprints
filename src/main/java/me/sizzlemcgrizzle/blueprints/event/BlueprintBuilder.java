@@ -148,7 +148,7 @@ public class BlueprintBuilder implements Listener {
 		/*
 		 * If there are any error blocks present, remove them.
 		 */
-		if (fakeBlockMap.size() != 0)
+		if (fakeBlockMap.containsValue(player))
 			clearFakeBlocks();
 
 		//Creating the operation that will be used to place the schematic. Basically doing //copy on a build.
@@ -259,7 +259,7 @@ public class BlueprintBuilder implements Listener {
 			returnItem.setAmount(1);
 
 			//Bossbar for countdown
-			BossBar bossBar = blueprintsPlugin.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SEGMENTED_12, BarFlag.CREATE_FOG);
+			BossBar bossBar = blueprintsPlugin.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SOLID, BarFlag.CREATE_FOG);
 			bossBar.addPlayer(player);
 			bossBar.setVisible(true);
 
@@ -298,6 +298,8 @@ public class BlueprintBuilder implements Listener {
 								e.printStackTrace();
 							}
 							player.getInventory().addItem(returnItem);
+							bossBar.removePlayer(player);
+							bossBar.setVisible(false);
 						}
 						runnable.cancel();
 					});
