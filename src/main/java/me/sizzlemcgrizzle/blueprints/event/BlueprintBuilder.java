@@ -48,16 +48,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 public class BlueprintBuilder implements Listener {
-
-	private ArrayList<Location> pasteBlockList = new ArrayList<>();
-	private HashMap<Location, Player> fakeBlockMap = new HashMap<>();
-	private HashMap<Location, Player> pasteFakeBlockmap = new HashMap<>();
+	private HashMap<Player, Set<Location>> fakeBlockMap = new HashMap<>();
+	private HashMap<Player, Set<Location>> pasteFakeBlockMap = new HashMap<>();
 
 	private CLClans clans = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
 	private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
@@ -98,11 +95,20 @@ public class BlueprintBuilder implements Listener {
 		return clipboard;
 	}
 
-	private void clearFakeBlocks() {
-		for (Map.Entry<Location, Player> entry : fakeBlockMap.entrySet()) {
-			entry.getValue().sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
+	private void clearFakeBlocks(Player player) {
+		if (player != null) {
+			if (fakeBlockMap.get(player) == null)
+				return;
+			for (Location location : fakeBlockMap.get(player)) {
+				player.sendBlockChange(location, location.getBlock().getBlockData());
+			}
+			fakeBlockMap.remove(player);
+		} else {
+			for (Player p : fakeBlockMap.keySet()) {
+				for (Location location : fakeBlockMap.get(p))
+					p.sendBlockChange(location, location.getBlock().getBlockData());
+			}
 		}
-		fakeBlockMap.clear();
 	}
 
 	/*
@@ -116,6 +122,8 @@ public class BlueprintBuilder implements Listener {
 		World world = player.getWorld();
 		String schematic;
 		Clipboard clipboard;
+		Set<Location> pasteBlockSet = new HashSet<>();
+		Set<Location> previewLocationSet = new HashSet<>();
 
 		/*
 		 * Is there a blueprint in the file for this block?
@@ -146,10 +154,19 @@ public class BlueprintBuilder implements Listener {
 		}
 
 		/*
+		 * If the player is already conversing, cancel the placement.
+		 */
+		if (player.isConversing()) {
+			Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&ePlease confirm/deny your existing placement before making a new one!");
+			event.setCancelled(true);
+			return;
+		}
+
+		/*
 		 * If there are any error blocks present, remove them.
 		 */
-		if (fakeBlockMap.containsValue(player))
-			clearFakeBlocks();
+		if (fakeBlockMap.containsKey(player))
+			clearFakeBlocks(player);
 
 		//Creating the operation that will be used to place the schematic. Basically doing //copy on a build.
 		try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(event.getPlayer().getWorld()), -1)) {
@@ -170,7 +187,8 @@ public class BlueprintBuilder implements Listener {
 				@Override
 				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
 					Location pasteLocation = new Location(event.getBlockPlaced().getWorld(), location.getX(), location.getY(), location.getZ());
-					pasteBlockList.add(pasteLocation);
+					if (!pasteLocation.getBlock().getType().equals(Material.AIR) && !Settings.Block.IGNORE_BLOCKS.contains(pasteLocation.getBlock().getType()))
+						pasteBlockSet.add(pasteLocation);
 					return true;
 				}
 			})
@@ -187,47 +205,34 @@ public class BlueprintBuilder implements Listener {
 			 * Check all of the blocks that will be pasted an determine if they aren't air or
 			 * they are in the list of ignored blocks.
 			 */
-			Iterator<Location> pasteIterator = pasteBlockList.iterator();
-			while (pasteIterator.hasNext()) {
-				Location location = pasteIterator.next();
-				if (!location.getBlock().getType().equals(Material.AIR) && !Settings.Block.IGNORE_BLOCKS.contains(location.getBlock().getType())) {
-					fakeBlockMap.put(location, player);
-					if (Settings.Block.SHOW_ERROR_PREVIEW)
-						player.sendBlockChange(location, Settings.Block.ERROR_BLOCK.createBlockData());
-					pasteIterator.remove();
-				}
+			if (pasteBlockSet.size() != 0) {
+				fakeBlockMap.put(player, pasteBlockSet);
 			}
 
 			/*
 			 * Send the player a message if there are error blocks present
 			 */
-			if (fakeBlockMap.size() != 0) {
+			if (fakeBlockMap.containsKey(player)) {
 				if (Settings.Block.SHOW_ERROR_PREVIEW)
 					Common.tell(player, blocksInWay);
 				else
 					Common.tell(player, blocksInwayNoPreview);
 				if (Settings.PLAY_SOUNDS)
 					player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+				for (Location location : fakeBlockMap.get(player)) {
+					player.sendBlockChange(location, Settings.Block.ERROR_BLOCK.createBlockData());
+				}
 
 
 				/*
 				 * Clear the ghost blocks
 				 */
-				Runnable runnable = this::clearFakeBlocks;
+				Runnable runnable = () -> clearFakeBlocks(player);
 
 				if (Settings.Block.SHOW_ERROR_PREVIEW)
 					Common.runLater(Settings.Block.BLOCK_TIMEOUT * 20, runnable);
 				else
-					fakeBlockMap.clear();
-				event.setCancelled(true);
-				return;
-			}
-
-			/*
-			 * If the player is already conversing, cancel the placement.
-			 */
-			if (player.isConversing()) {
-				Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&ePlease confirm/deny your existing placement before making a new one!");
+					fakeBlockMap.remove(player);
 				event.setCancelled(true);
 				return;
 			}
@@ -240,7 +245,7 @@ public class BlueprintBuilder implements Listener {
 				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
 					com.sk89q.worldedit.entity.Player wePlayer = BukkitAdapter.adapt(player);
 					wePlayer.sendFakeBlock(location, block);
-					pasteFakeBlockmap.put(new Location(world, location.getX(), location.getY(), location.getZ()), player);
+					previewLocationSet.add(new Location(world, location.getX(), location.getY(), location.getZ()));
 					return true;
 				}
 			})
@@ -250,6 +255,10 @@ public class BlueprintBuilder implements Listener {
 					.ignoreAirBlocks(true)
 					.build();
 			Operations.complete(previewOperation);
+
+			if (previewLocationSet.size() != 0) {
+				pasteFakeBlockMap.put(player, previewLocationSet);
+			}
 
 			if (Settings.PLAY_SOUNDS)
 				player.playSound(player.getLocation(), CompSound.NOTE_BASS.getSound(), 2.0F, 0.8F);
@@ -274,7 +283,7 @@ public class BlueprintBuilder implements Listener {
 						cancel();
 					if (secondsLeft % 2.5 == 0 && secondsLeft != 30.0 && Settings.PLAY_SOUNDS)
 						player.playSound(player.getLocation(), CompSound.NOTE_BASS.getSound(), 2.0F, 0.8F);
-					bossBar.setTitle(ChatColor.GREEN + "Confirm Placement - " + ChatColor.RED + format.format(secondsLeft) + ChatColor.GREEN + " seconds left");
+					bossBar.setTitle(ChatColor.GREEN + "Confirm Placement: " + ChatColor.RED + format.format(secondsLeft) + ChatColor.GREEN + " seconds left");
 					bossBar.setProgress(secondsLeft / 30.0);
 					secondsLeft -= 0.05;
 				}
@@ -284,14 +293,16 @@ public class BlueprintBuilder implements Listener {
 					.withLocalEcho(false)
 					.withModality(false)
 					.withTimeout(30)
-					.withFirstPrompt(new ConfirmationPrompt(player, item, pasteFakeBlockmap, clipboard, block.getLocation(), schematic, bossBar))
+					.withFirstPrompt(new ConfirmationPrompt(player, item, pasteFakeBlockMap, clipboard, block.getLocation(), schematic, bossBar))
 					.addConversationAbandonedListener(conversationAbandonedEvent -> {
 						if (!conversationAbandonedEvent.gracefulExit()) {
 							Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&eYour placement has been cancelled.");
-							for (Map.Entry<Location, Player> entry : pasteFakeBlockmap.entrySet()) {
-								player.sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
+
+							for (Location location : pasteFakeBlockMap.get(player)) {
+								player.sendBlockChange(location, location.getBlock().getBlockData());
 							}
-							pasteFakeBlockmap.clear();
+
+							pasteFakeBlockMap.remove(player);
 							try {
 								blueprintsPlugin.logs().addToLogs(player, block.getLocation(), schematic, "abandoned");
 							} catch (IOException e) {
@@ -315,6 +326,6 @@ public class BlueprintBuilder implements Listener {
 	public void onReload(ReloadEvent event) {
 		if (fakeBlockMap.size() == 0)
 			return;
-		clearFakeBlocks();
+		clearFakeBlocks(null);
 	}
 }

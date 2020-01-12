@@ -26,7 +26,7 @@ import org.mineacademy.fo.remain.CompSound;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Set;
 
 /*
  * Made by SydMontague:
@@ -41,19 +41,19 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 
 	private Player player;
 	private ItemStack item;
-	private HashMap<Location, Player> pasteFakeBlockMap;
+	private HashMap<Player, Set<Location>> pasteFakeBlockMap;
 	private Clipboard clipboard;
 	private Location location;
 	private String schematic;
 	private BossBar bossBar;
 
-	public ConfirmationPrompt(Player player, ItemStack item, HashMap<Location, Player> ghostBlockMap, Clipboard clipboard, Location location, String schematic, BossBar bossBar) {
+	public ConfirmationPrompt(Player player, ItemStack item, HashMap<Player, Set<Location>> ghostBlockMap, Clipboard clipboard, Location location, String schematic, BossBar bossBar) {
 		super(ChatColor.YELLOW + "Do you want to place this blueprint here? Click:");
 
 		this.player = player;
 		this.item = item.clone();
 		this.item.setAmount(1);
-		this.pasteFakeBlockMap = (HashMap<Location, Player>) ghostBlockMap.clone();
+		this.pasteFakeBlockMap = (HashMap<Player, Set<Location>>) ghostBlockMap.clone();
 		this.clipboard = clipboard;
 		this.location = location;
 		this.schematic = schematic;
@@ -63,10 +63,10 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 	@Override
 	protected @Nullable Prompt acceptValidatedInput(@NotNull ConversationContext conversationContext, boolean input) {
 		if (input) {
-			for (Map.Entry<Location, Player> entry : pasteFakeBlockMap.entrySet()) {
-				player.sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
+			for (Location location : pasteFakeBlockMap.get(player)) {
+				player.sendBlockChange(location, location.getBlock().getBlockData());
 			}
-			pasteFakeBlockMap.clear();
+			pasteFakeBlockMap.remove(player);
 			try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(location.getWorld()), -1)) {
 				Operation operation = new ClipboardHolder(clipboard)
 						.createPaste(editSession)
@@ -86,9 +86,11 @@ public class ConfirmationPrompt extends ClickableBooleanPrompt {
 				e.printStackTrace();
 			}
 		} else {
-			for (Map.Entry<Location, Player> entry : pasteFakeBlockMap.entrySet()) {
-				player.sendBlockChange(entry.getKey(), entry.getKey().getBlock().getBlockData());
+			for (Location location : pasteFakeBlockMap.get(player)) {
+				player.sendBlockChange(location, location.getBlock().getBlockData());
 			}
+			pasteFakeBlockMap.remove(player);
+
 			try {
 				blueprintsPlugin.logs().addToLogs(player, location, schematic, "denied");
 			} catch (IOException e) {
