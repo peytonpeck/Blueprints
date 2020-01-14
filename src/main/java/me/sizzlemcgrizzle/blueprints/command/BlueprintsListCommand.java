@@ -20,12 +20,13 @@ public class BlueprintsListCommand extends SimpleSubCommand {
 	protected BlueprintsListCommand(SimpleCommandGroup parent) {
 		super(parent, "list");
 		setPermission("blueprints.list");
-		setMinArguments(1);
 		setUsage("<number>");
 	}
 
 	@Override
 	protected void onCommand() {
+		if (args.length == 0)
+			args = new String[]{"1"};
 		int num = Integer.parseInt(args[0]);
 		try {
 
