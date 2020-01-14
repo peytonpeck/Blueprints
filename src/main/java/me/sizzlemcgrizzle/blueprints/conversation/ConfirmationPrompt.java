@@ -48,11 +48,13 @@ public class ConfirmationPrompt extends NewPrompt {
 	private Player player;
 	private ItemStack item;
 	private HashMap<Player, Set<Location>> pasteFakeBlockMap;
-	private Clipboard clipboard;
 	private Location blockLocation;
 	private String schematic;
 	private BossBar bossBar;
 	private ClipboardHolder holder;
+	private Set<Location> previewLocationSet = new HashSet<>();
+	private String[] yes = new String[]{"yes", "1", "true", "y", "correct", "valid"};
+	private String[] no = new String[]{"no", "0", "false", "n", "wrong", "invalid"};
 
 	private int counter = 0;
 
@@ -63,20 +65,36 @@ public class ConfirmationPrompt extends NewPrompt {
 		this.item = item.clone();
 		this.item.setAmount(1);
 		this.pasteFakeBlockMap = (HashMap<Player, Set<Location>>) ghostBlockMap.clone();
-		this.clipboard = clipboard;
 		this.blockLocation = location;
 		this.schematic = schematic;
 		this.bossBar = bossBar;
 		this.holder = new ClipboardHolder(clipboard);
 	}
 
+	private void completeFakeOperation() {
+		try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(blockLocation.getWorld()), -1)) {
+			Operation previewOperation = holder.createPaste(new AbstractDelegateExtent(editSession) {
+				@Override
+				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
+					com.sk89q.worldedit.entity.Player wePlayer = BukkitAdapter.adapt(player);
+					wePlayer.sendFakeBlock(location, block);
+					previewLocationSet.add(new Location(blockLocation.getWorld(), location.getX(), location.getY(), location.getZ()));
+					return true;
+				}
+			})
+					.to(BlockVector3.at(blockLocation.getX(), blockLocation.getY(), blockLocation.getZ()))
+					.copyBiomes(false)
+					.copyEntities(false)
+					.ignoreAirBlocks(true)
+					.build();
+			Operations.complete(previewOperation);
+		} catch (WorldEditException e) {
+			e.printStackTrace();
+		}
+	}
+
 	@Override
 	protected @Nullable Prompt acceptValidatedInput(@NotNull ConversationContext conversationContext, @NotNull String input) {
-		String[] yes = new String[]{"yes", "1", "true", "y", "correct", "valid"};
-		String[] no = new String[]{"no", "0", "false", "n", "wrong", "invalid"};
-
-		Set<Location> previewLocationSet = new HashSet<>();
-
 		if (ArrayUtils.contains(yes, input.toLowerCase())) {
 			for (Location location : pasteFakeBlockMap.get(player)) {
 				player.sendBlockChange(location, location.getBlock().getBlockData());
@@ -133,25 +151,8 @@ public class ConfirmationPrompt extends NewPrompt {
 
 
 			//Create new operation to show preview
-			try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(blockLocation.getWorld()), -1)) {
-				Operation previewOperation = holder.createPaste(new AbstractDelegateExtent(editSession) {
-					@Override
-					public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
-						com.sk89q.worldedit.entity.Player wePlayer = BukkitAdapter.adapt(player);
-						wePlayer.sendFakeBlock(location, block);
-						previewLocationSet.add(new Location(blockLocation.getWorld(), location.getX(), location.getY(), location.getZ()));
-						return true;
-					}
-				})
-						.to(BlockVector3.at(blockLocation.getX(), blockLocation.getY(), blockLocation.getZ()))
-						.copyBiomes(false)
-						.copyEntities(false)
-						.ignoreAirBlocks(true)
-						.build();
-				Operations.complete(previewOperation);
-			} catch (WorldEditException e) {
-				e.printStackTrace();
-			}
+			completeFakeOperation();
+
 			if (previewLocationSet.size() != 0) {
 				pasteFakeBlockMap.put(player, previewLocationSet);
 			}
@@ -170,25 +171,8 @@ public class ConfirmationPrompt extends NewPrompt {
 
 
 			//Create new operation to show preview
-			try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(blockLocation.getWorld()), -1)) {
-				Operation previewOperation = holder.createPaste(new AbstractDelegateExtent(editSession) {
-					@Override
-					public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
-						com.sk89q.worldedit.entity.Player wePlayer = BukkitAdapter.adapt(player);
-						wePlayer.sendFakeBlock(location, block);
-						previewLocationSet.add(new Location(blockLocation.getWorld(), location.getX(), location.getY(), location.getZ()));
-						return true;
-					}
-				})
-						.to(BlockVector3.at(blockLocation.getX(), blockLocation.getY(), blockLocation.getZ()))
-						.copyBiomes(false)
-						.copyEntities(false)
-						.ignoreAirBlocks(true)
-						.build();
-				Operations.complete(previewOperation);
-			} catch (WorldEditException e) {
-				e.printStackTrace();
-			}
+			completeFakeOperation();
+
 			if (previewLocationSet.size() != 0) {
 				pasteFakeBlockMap.put(player, previewLocationSet);
 			}
