@@ -72,6 +72,11 @@ public class ConfirmationPrompt extends NewPrompt {
 	}
 
 	private void completeFakeOperation() {
+		for (Location location : pasteFakeBlockMap.get(player)) {
+			player.sendBlockChange(location, location.getBlock().getBlockData());
+		}
+		pasteFakeBlockMap.remove(player);
+
 		try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(blockLocation.getWorld()), -1)) {
 			Operation previewOperation = holder.createPaste(new AbstractDelegateExtent(editSession) {
 				@Override
@@ -90,6 +95,10 @@ public class ConfirmationPrompt extends NewPrompt {
 			Operations.complete(previewOperation);
 		} catch (WorldEditException e) {
 			e.printStackTrace();
+		}
+
+		if (previewLocationSet.size() != 0) {
+			pasteFakeBlockMap.put(player, previewLocationSet);
 		}
 	}
 
@@ -143,43 +152,17 @@ public class ConfirmationPrompt extends NewPrompt {
 		} else if (input.equalsIgnoreCase("right")) {
 			counter += 1;
 			holder.setTransform(new AffineTransform().rotateY(counter * 90));
-
-			for (Location location : pasteFakeBlockMap.get(player)) {
-				player.sendBlockChange(location, location.getBlock().getBlockData());
-			}
-			pasteFakeBlockMap.remove(player);
-
-
 			//Create new operation to show preview
 			completeFakeOperation();
-
-			if (previewLocationSet.size() != 0) {
-				pasteFakeBlockMap.put(player, previewLocationSet);
-			}
-
 			return this;
 
 
 		} else if (input.equalsIgnoreCase("left")) {
 			counter -= 1;
 			holder.setTransform(new AffineTransform().rotateY(counter * -90));
-
-			for (Location location : pasteFakeBlockMap.get(player)) {
-				player.sendBlockChange(location, location.getBlock().getBlockData());
-			}
-			pasteFakeBlockMap.remove(player);
-
-
 			//Create new operation to show preview
 			completeFakeOperation();
-
-			if (previewLocationSet.size() != 0) {
-				pasteFakeBlockMap.put(player, previewLocationSet);
-			}
-
 			return this;
-
-
 		}
 		return Prompt.END_OF_CONVERSATION;
 	}

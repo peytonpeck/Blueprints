@@ -1,8 +1,9 @@
-# --------------------------------------------------------------------------------------
-#
-# Welcome to the settings file for Blueprints.
-# For documentation, visit: https://github.com/SizzleMcGrizzle/Blueprints/wiki/settings.yml
-# ---------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------- #
+#                                                                                             #
+# Welcome to the settings file for Blueprints.                                                #
+# For documentation, visit: https://github.com/SizzleMcGrizzle/Blueprints/wiki/settings.yml   #
+#                                                                                             #
+# ------------------------------------------------------------------------------------------- #
 
 Play_Sounds: true
 Block:
