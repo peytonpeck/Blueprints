@@ -22,6 +22,31 @@ Block:
     - SNOW
     - KELP_PLANT
     - KELP
+    - POPPY
+    - OAK_SAPLING
+    - SPRUCE_SAPLING
+    - BIRCH_SAPLING
+    - DARK_OAK_SAPLING
+    - JUNGLE_SAPLING
+    - ACACIA_SAPLING
+    - DANDELION
+    - BLUE_ORCHID
+    - VINE
+    - WALL_TORCH
+    - SUNFLOWER
+    - ALLIUM
+    - AZURE_BLUET
+    - ORANGE_TULIP
+    - PINK_TULIP
+    - RED_TULIP
+    - WHITE_TULIP
+    - OXEYE_DAISY
+    - CORNFLOWER
+    - RED_MUSHROOM
+    - BROWN_MUSHROOM
+    - FERN
+    - TORCH
+    - DEAD_BUSH
 
 
 
