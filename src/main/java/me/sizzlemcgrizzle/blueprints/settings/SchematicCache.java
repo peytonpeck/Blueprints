@@ -3,7 +3,6 @@ package me.sizzlemcgrizzle.blueprints.settings;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -83,7 +82,7 @@ public class SchematicCache {
 
 		config.load(file);
 
-		if (item.getType() == Material.AIR)
+		if (item.getType().isAir())
 			return failure;
 		if (!item.getItemMeta().getDisplayName().equals("")) {
 			String success = Settings.Messages.MESSAGE_PREFIX + "&7Successfully removed the " + item.getItemMeta().getDisplayName() + " &7blueprint.";

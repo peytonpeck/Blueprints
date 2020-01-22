@@ -3,7 +3,6 @@ package me.sizzlemcgrizzle.blueprints.command;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.command.SimpleCommandGroup;
@@ -21,7 +20,7 @@ public class BlueprintsRemoveCommand extends SimpleSubCommand {
 
 	@Override
 	protected void onCommand() {
-		if (getPlayer().getInventory().getItemInMainHand().getType().equals(Material.AIR))
+		if (getPlayer().getInventory().getItemInMainHand().getType().isAir())
 			tell(Settings.Messages.MESSAGE_PREFIX + "&cYou are not holding a block!");
 		else
 			try {

@@ -99,16 +99,13 @@ public class BlueprintBuilder implements Listener {
 		if (player != null) {
 			if (fakeBlockMap.get(player) == null)
 				return;
-			for (Location location : fakeBlockMap.get(player)) {
+			for (Location location : fakeBlockMap.get(player))
 				player.sendBlockChange(location, location.getBlock().getBlockData());
-			}
 			fakeBlockMap.remove(player);
-		} else {
-			for (Player p : fakeBlockMap.keySet()) {
+		} else
+			for (Player p : fakeBlockMap.keySet())
 				for (Location location : fakeBlockMap.get(p))
 					p.sendBlockChange(location, location.getBlock().getBlockData());
-			}
-		}
 	}
 
 	/*
@@ -124,7 +121,6 @@ public class BlueprintBuilder implements Listener {
 		Clipboard clipboard;
 		Set<Location> pasteBlockSet = new HashSet<>();
 		Set<Location> previewLocationSet = new HashSet<>();
-
 		/*
 		 * Is there a blueprint in the file for this block?
 		 */
@@ -187,7 +183,7 @@ public class BlueprintBuilder implements Listener {
 				@Override
 				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
 					Location pasteLocation = new Location(event.getBlockPlaced().getWorld(), location.getX(), location.getY(), location.getZ());
-					if (!pasteLocation.getBlock().getType().equals(Material.AIR) && !Settings.Block.IGNORE_BLOCKS.contains(pasteLocation.getBlock().getType()))
+					if (!pasteLocation.getBlock().getType().isAir() && !Settings.Block.IGNORE_BLOCKS.contains(pasteLocation.getBlock().getType()))
 						pasteBlockSet.add(pasteLocation);
 					return true;
 				}
