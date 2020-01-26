@@ -127,7 +127,6 @@ public class BlueprintBuilder implements Listener {
 		if (blueprintsPlugin.schematicCache().getSchematicFor(item) != null) {
 			//Store the schematic from the block in a variable, and set the blueprint block to air so it cannot be duped.
 			schematic = blueprintsPlugin.schematicCache().getSchematicFor(event.getItemInHand());
-			event.getBlockPlaced().setType(Material.AIR);
 			clipboard = getSchematic(schematic, player);
 		} else
 			return;
@@ -135,7 +134,7 @@ public class BlueprintBuilder implements Listener {
 		/*
 		 * Check if the block's location is not in a claim.
 		 */
-		if (GriefPrevention.instance.isEnabled()) {
+		if (GriefPrevention.instance.isEnabled() && !block.getType().equals(Material.LILY_PAD)) {
 			Claim claim = null;
 			for (Claim c : GriefPrevention.instance.dataStore.getClaims())
 				if (c.contains(block.getLocation(), true, false))
@@ -148,6 +147,7 @@ public class BlueprintBuilder implements Listener {
 				return;
 			}
 		}
+		event.getBlockPlaced().setType(Material.AIR);
 
 		/*
 		 * If the player is already conversing, cancel the placement.
