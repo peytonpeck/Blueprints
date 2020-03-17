@@ -1,30 +1,8 @@
 name: ${project.name}
 version: ${project.version}
-main: me.sizzlemcgrizzle.blueprints.BlueprintsPlugin
+main: me.sizzlemcgrizzle.superblocks.SuperBlocksPlugin
 author: sizzlemcgrizzle
 api-version: 1.13
-description: Place "blueprint" blocks to build schematics!
-softdepend: [CLClans, WorldEdit]
+description: Modified uses of certain blocks
 permissions:
-  blueprints.add:
-    default: op
-  blueprints.remove:
-    default: op
-  blueprints.reload:
-    default: op
-  blueprints.list:
-    default: op
-  blueprints.get:
-    default: op
 commands:
-  blueprints list:
-    description: list of current blueprints that are clickable.
-  blueprints get:
-    description: used to get blueprints.
-  blueprints add:
-    description: add a blueprint with the block in your hand
-  blueprints remove:
-    description: removes the blueprint that is in your hand
-  blueprints reload:
-    description: reloads the configuration.
-
