@@ -1,3 +1,65 @@
+# ------------------------------------------------------------------------------------------- #
+#                                                                                             #
+# Welcome to the settings file for Blueprints.                                                #
+# For documentation, visit: https://github.com/SizzleMcGrizzle/Blueprints/wiki/settings.yml   #
+#                                                                                             #
+# ------------------------------------------------------------------------------------------- #
+
+Play_Sounds: true
+Block:
+  Show_Error_Preview: true
+  Error_Block: RED_CONCRETE
+  Block_Timeout: 5
+  No_Place_Outside_Claims: true
+  No_Place_Block_In_Way: true
+  No_Place_Admin_Claim: true
+  Ignore_Blocks:
+    - GRASS
+    - WATER
+    - SEAGRASS
+    - TALL_SEAGRASS
+    - TALL_GRASS
+    - SNOW
+    - KELP_PLANT
+    - KELP
+    - POPPY
+    - OAK_SAPLING
+    - SPRUCE_SAPLING
+    - BIRCH_SAPLING
+    - DARK_OAK_SAPLING
+    - JUNGLE_SAPLING
+    - ACACIA_SAPLING
+    - DANDELION
+    - BLUE_ORCHID
+    - VINE
+    - WALL_TORCH
+    - SUNFLOWER
+    - ALLIUM
+    - AZURE_BLUET
+    - ORANGE_TULIP
+    - PINK_TULIP
+    - RED_TULIP
+    - WHITE_TULIP
+    - OXEYE_DAISY
+    - CORNFLOWER
+    - RED_MUSHROOM
+    - BROWN_MUSHROOM
+    - FERN
+    - TORCH
+    - DEAD_BUSH
+
+
+
+Messages:
+  Message_Prefix: "&8[&3Blueprints&8] "
+  Reload_Success: "&7Config successfully reloaded"
+  Build_Success: "&bYour blueprint has been built!"
+  Blueprint_Not_In_Claim: "&cYou must place your blueprint in a claim!"
+  Player_Not_Trusted: "&cYou must place your blueprint in a claim you are trusted in!"
+  Blueprint_In_Admin_Claim: "&cPart of/your entire blueprint has been placed in an admin claim, do not try to grief!"
+  Show_Error_True_Message: "&cYour blueprint cannot be built here because there are blocks in the way. They have been highlighted for show."
+  Show_Error_False_Message: "&cYour blueprint cannot be built here because there are blocks in the way."
+
 Log_Lag_Over_Milis: 100
 Debug: []
 Version: 1
