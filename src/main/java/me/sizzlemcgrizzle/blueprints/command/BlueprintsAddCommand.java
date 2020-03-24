@@ -25,14 +25,12 @@ public class BlueprintsAddCommand extends SimpleSubCommand {
 		checkConsole();
 		final ItemStack blueprint = getPlayer().getInventory().getItemInMainHand();
 
-		if (args.length == 1) {
-			try {
-				Common.tell(getPlayer(), blueprintsPlugin.schematicCache().addBlueprint(args[0], blueprint));
-				blueprintsPlugin.schematicCache().getSchematicFor(getPlayer().getInventory().getItemInMainHand());
+		try {
+			Common.tell(getPlayer(), blueprintsPlugin.schematicCache().addBlueprint(args[0], blueprint));
+			blueprintsPlugin.schematicCache().getSchematicFor(getPlayer().getInventory().getItemInMainHand());
 
-			} catch (final IOException | InvalidConfigurationException e) {
-				e.printStackTrace();
-			}
+		} catch (final IOException | InvalidConfigurationException e) {
+			e.printStackTrace();
 		}
 	}
 }

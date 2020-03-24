@@ -10,6 +10,7 @@ public class BlueprintsCommandGroup extends SimpleCommandGroup {
 		registerSubcommand(new BlueprintsReloadCommand(this));
 		registerSubcommand(new BlueprintsListCommand(this));
 		registerSubcommand(new BlueprintsGetCommand(this));
+		registerSubcommand(new BlueprintsSettimerCommand(this));
 	}
 
 	@Override

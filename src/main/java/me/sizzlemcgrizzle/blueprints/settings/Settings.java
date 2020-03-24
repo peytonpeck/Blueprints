@@ -63,6 +63,7 @@ public class Settings extends SimpleSettings {
 		public static Boolean NO_PLACE_OUTSIDE_CLAIMS;
 		public static Boolean NO_PLACE_BLOCK_IN_WAY;
 		public static Boolean NO_PLACE_ADMIN_CLAIM;
+		public static Integer BOSSBAR_DURATION;
 
 		private static void init() {
 			pathPrefix("Block");
@@ -74,6 +75,7 @@ public class Settings extends SimpleSettings {
 			NO_PLACE_OUTSIDE_CLAIMS = getBoolean("No_Place_Outside_Claims");
 			NO_PLACE_BLOCK_IN_WAY = getBoolean("No_Place_Block_In_Way");
 			NO_PLACE_ADMIN_CLAIM = getBoolean("No_Place_Admin_Claim");
+			BOSSBAR_DURATION = Integer.valueOf(getString("Bossbar_Duration"));
 
 		}
 	}

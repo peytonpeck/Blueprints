@@ -9,7 +9,7 @@
      -->
 
     <!-- Your MC test server location for Windows -->
-    <condition property="serverPath" value="D:\Project Orion Server">
+    <condition property="serverPath" value="D:\Desktop Move 3-15-20\Test servers\Blueprints Test Server">
         <os family="windows"/>
     </condition>
 

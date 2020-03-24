@@ -4,7 +4,7 @@ main: me.sizzlemcgrizzle.blueprints.BlueprintsPlugin
 author: sizzlemcgrizzle
 api-version: 1.13
 description: Place "blueprint" blocks to build schematics!
-softdepend: [CLClans, WorldEdit]
+softdepend: [CLClans, WorldEdit, WorldGuard]
 permissions:
   blueprints.add:
     default: op
