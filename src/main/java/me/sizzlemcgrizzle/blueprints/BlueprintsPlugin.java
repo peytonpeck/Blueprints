@@ -65,19 +65,6 @@ public class BlueprintsPlugin extends SimplePlugin {
 		return logs;
 	}
 
-	public void addBlueprint(Player player, Blueprint blueprint) {
-		map.put(player, blueprint);
-	}
-
-	public boolean isExistingBlueprint(Player player) {
-		return map.containsKey(player);
-	}
-
-	public void removeBlueprint(Player player) {
-		Blueprint blueprint = map.get(player);
-		map.remove(player);
-		blueprint = null;
-	}
 
 	public BossBar getBossBar() {
 		return bossBar;

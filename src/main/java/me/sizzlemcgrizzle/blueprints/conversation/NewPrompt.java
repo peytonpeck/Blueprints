@@ -32,9 +32,9 @@ public class NewPrompt extends FixedSetPrompt {
 				.onClickRunCmd("/convo +z")
 				.append("&9&l[-Z] ")
 				.onClickRunCmd("/convo -z")
-				.append("&b&l[+Y] ")
+				.append("&b&l[Up] ")
 				.onClickRunCmd("/convo +y")
-				.append("&b&l[-Y] ")
+				.append("&b&l[Down] ")
 				.onClickRunCmd("/convo -y")
 				.build();
 	}

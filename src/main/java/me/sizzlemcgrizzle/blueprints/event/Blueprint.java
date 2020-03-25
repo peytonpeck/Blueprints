@@ -81,6 +81,8 @@ public class Blueprint {
 	private Set<Location> pasteBlockSet = new HashSet<>();
 	private Set<Location> errorBlockSet = new HashSet<>();
 
+	private Conversation convo;
+
 	Blueprint(Player player, Location loc, ItemStack item, String schematic, Block block, World world, GameMode gameMode) {
 		this.item = item;
 		this.item.setAmount(1);
@@ -292,7 +294,6 @@ public class Blueprint {
 			Operations.complete(operation);
 			blueprintsPlugin.logs().addToLogs(player, location, schematic, "confirmed");
 			bossBar.removePlayer(player);
-			blueprintsPlugin.removeBlueprint(player);
 			if (Settings.PLAY_SOUNDS)
 				player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
 			Common.tell(player, placementAccepted);
@@ -358,6 +359,7 @@ public class Blueprint {
 			public void run() {
 				secondsLeft = Math.round(secondsLeft * 100.0) / 100.0;
 				if (secondsLeft == 0.0) {
+					convo.abandon();
 					cancel();
 				}
 				if (secondsLeft % 2.5 == 0 && secondsLeft != duration && Settings.PLAY_SOUNDS)
@@ -390,10 +392,9 @@ public class Blueprint {
 					makeBossBarInvisible();
 					clearErrorBlocks();
 					clearFakeBlocks();
-					blueprintsPlugin.removeBlueprint(player);
 					runnable.cancel();
 				});
-		Conversation convo = conversation.buildConversation(new FormattedConversable(player));
+		convo = conversation.buildConversation(new FormattedConversable(player));
 		convo.begin();
 	}
 
