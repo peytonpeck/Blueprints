@@ -15,6 +15,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.IOException;
+import java.util.List;
 
 public class BlueprintListener implements Listener {
 
@@ -28,11 +29,14 @@ public class BlueprintListener implements Listener {
 		Location blockLocation = event.getBlockPlaced().getLocation();
 		World world = blockLocation.getWorld();
 		String schematic;
+		String type;
 
 		if (blueprintsPlugin.schematicCache().getSchematicFor(item) != null) {
-			schematic = blueprintsPlugin.schematicCache().getSchematicFor(event.getItemInHand());
+			List<String> list = blueprintsPlugin.schematicCache().getSchematicFor(event.getItemInHand());
+			schematic = list.get(0);
+			type = list.get(1);
 
-			if (new Blueprint(player, blockLocation, item, schematic, block, world, player.getGameMode()).start())
+			if (new Blueprint(player, blockLocation, item, schematic, block, world, player.getGameMode(), type).start())
 				event.setCancelled(true);
 		}
 

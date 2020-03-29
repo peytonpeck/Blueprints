@@ -20,6 +20,7 @@ public class BlueprintsRemoveCommand extends SimpleSubCommand {
 
 	@Override
 	protected void onCommand() {
+		checkConsole();
 		if (getPlayer().getInventory().getItemInMainHand().getType().isAir())
 			tell(Settings.Messages.MESSAGE_PREFIX + "&cYou are not holding a block!");
 		else

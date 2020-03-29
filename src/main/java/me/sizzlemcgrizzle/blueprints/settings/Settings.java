@@ -4,6 +4,8 @@ import org.bukkit.Material;
 import org.mineacademy.fo.collection.StrictList;
 import org.mineacademy.fo.settings.SimpleSettings;
 
+import java.util.List;
+
 public class Settings extends SimpleSettings {
 	@Override
 	protected int getConfigVersion() {
@@ -23,10 +25,12 @@ public class Settings extends SimpleSettings {
 	}
 
 	public static Boolean PLAY_SOUNDS;
+	public static List<String> TYPES;
 
 	private static void init() {
 		pathPrefix(null);
 		PLAY_SOUNDS = getBoolean("Play_Sounds");
+		TYPES = getStringList("Blueprint_Types");
 
 	}
 

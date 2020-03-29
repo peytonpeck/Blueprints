@@ -26,6 +26,7 @@ import de.craftlancer.clclans.CLClans;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
+import me.sizzlemcgrizzle.blueprints.api.BlueprintPasteEvent;
 import me.sizzlemcgrizzle.blueprints.conversation.ConfirmationPrompt;
 import me.sizzlemcgrizzle.blueprints.conversation.FormattedConversable;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
@@ -77,13 +78,15 @@ public class Blueprint {
 	private BukkitTask clearErrorBlocks;
 	private GameMode gameMode;
 	private Inventory inventory;
+	private String type;
 
 	private Set<Location> pasteBlockSet = new HashSet<>();
 	private Set<Location> errorBlockSet = new HashSet<>();
 
 	private Conversation convo;
 
-	Blueprint(Player player, Location loc, ItemStack item, String schematic, Block block, World world, GameMode gameMode) {
+	Blueprint(Player player, Location loc, ItemStack item, String schematic, Block block, World world, GameMode gameMode, String type) {
+		this.type = type;
 		this.item = item;
 		this.item.setAmount(1);
 		this.player = player;
@@ -282,6 +285,13 @@ public class Blueprint {
 		for (Location location : pasteBlockSet) {
 			player.sendBlockChange(location, location.getBlock().getBlockData());
 		}
+
+
+		BlueprintPasteEvent event = new BlueprintPasteEvent(type, player, schematic, gameMode, item, location);
+		Common.callEvent(event);
+		if (event.isCancelled())
+			return;
+
 		try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(world), -1)) {
 			Operation operation = holder
 					.createPaste(editSession)
@@ -385,7 +395,10 @@ public class Blueprint {
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
-						player.getInventory().addItem(item);
+						if (inventory.firstEmpty() == -1)
+							world.dropItemNaturally(player.getLocation(), item);
+						else
+							player.getInventory().addItem(item);
 						if (Settings.PLAY_SOUNDS)
 							player.playSound(player.getLocation(), CompSound.LEVEL_UP.getSound(), 1F, 1F);
 					}
@@ -407,7 +420,10 @@ public class Blueprint {
 			player.playSound(player.getLocation(), CompSound.LEVEL_UP.getSound(), 1F, 1F);
 		Common.tell(player, placementDenied);
 		makeBossBarInvisible();
-		player.getInventory().addItem(item);
+		if (inventory.firstEmpty() == -1)
+			world.dropItemNaturally(player.getLocation(), item);
+		else
+			player.getInventory().addItem(item);
 
 	}
 }

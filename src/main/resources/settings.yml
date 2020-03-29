@@ -6,6 +6,10 @@
 # ------------------------------------------------------------------------------------------- #
 
 Play_Sounds: true
+Blueprint_Types:
+  - NORMAL
+  - STONECRUSHER
+  - PORTAL
 Block:
   Bossbar_Duration: 60
   Show_Error_Preview: true

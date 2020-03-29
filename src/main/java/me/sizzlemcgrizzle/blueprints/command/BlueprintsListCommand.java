@@ -25,6 +25,7 @@ public class BlueprintsListCommand extends SimpleSubCommand {
 
 	@Override
 	protected void onCommand() {
+		checkConsole();
 		if (args.length == 0)
 			args = new String[]{"1"};
 		int num = Integer.parseInt(args[0]);

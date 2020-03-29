@@ -11,8 +11,8 @@ public class BlueprintsCommandGroup extends SimpleCommandGroup {
 		registerSubcommand(new BlueprintsListCommand(this));
 		registerSubcommand(new BlueprintsGetCommand(this));
 		registerSubcommand(new BlueprintsConfigCommand(this));
+		registerSubcommand(new BlueprintsAddtypeCommand(this));
 	}
-
 
 	@Override
 	protected String getCredits() {

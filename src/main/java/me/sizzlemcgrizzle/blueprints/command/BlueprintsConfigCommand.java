@@ -36,6 +36,7 @@ public class BlueprintsConfigCommand extends SimpleSubCommand {
 
 	@Override
 	protected void onCommand() {
+		checkConsole();
 		if (!commmands.contains(args[0])) {
 			tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must put a valid subcommand in! (Use tab-complete to find your way around)");
 			return;

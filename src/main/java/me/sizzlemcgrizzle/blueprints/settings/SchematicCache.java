@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -24,7 +25,7 @@ public class SchematicCache {
 	/*
 	 * Adds a blueprint from a string (the schematic file name) and a block (item in hand).
 	 */
-	public String addBlueprint(String schematic, ItemStack blueprint) throws IOException, InvalidConfigurationException {
+	public String addBlueprint(String schematic, ItemStack blueprint, String type) throws IOException, InvalidConfigurationException {
 		String success = Settings.Messages.MESSAGE_PREFIX + "&7You successfully added a blueprint with name " + blueprint.getItemMeta().getDisplayName() + " &7calling schematic &d" + schematic;
 		String failure = Settings.Messages.MESSAGE_PREFIX + "&cThere is no such file '&4" + schematic + "&c'. Please add the schematic to the Schematics folder.";
 		String notSpecial = Settings.Messages.MESSAGE_PREFIX + "&cThe block you are holding does not have a special name, and this is dangerous!";
@@ -46,6 +47,7 @@ public class SchematicCache {
 		if (!blueprint.getItemMeta().getDisplayName().equals("")) {
 			config.createSection(blueprint.getItemMeta().getDisplayName());
 			config.getConfigurationSection(blueprint.getItemMeta().getDisplayName()).set("Schematic", schematic);
+			config.getConfigurationSection(blueprint.getItemMeta().getDisplayName()).set("Type", type);
 			config.getConfigurationSection(blueprint.getItemMeta().getDisplayName()).set("Blueprint", blueprint);
 		} else
 			return notSpecial;
@@ -57,9 +59,10 @@ public class SchematicCache {
 	/*
 	 * (Used in BlueprintBuilder) Gets the schematic for a given block/item.
 	 */
-	public String getSchematicFor(ItemStack item) throws IOException, InvalidConfigurationException {
+	public List<String> getSchematicFor(ItemStack item) throws IOException, InvalidConfigurationException {
 		config.load(file);
 		String schematicPut = null;
+		String type = null;
 
 		if (!item.getItemMeta().getDisplayName().equals("")) {
 			ConfigurationSection configSection = config.getConfigurationSection(item.getItemMeta().getDisplayName());
@@ -67,11 +70,15 @@ public class SchematicCache {
 				for (String key : configSection.getKeys(false)) {
 					if (key.equals("Schematic"))
 						schematicPut = configSection.getString(key);
+					if (key.equals("Type"))
+						type = configSection.getString(key);
 				}
+			if (type == null)
+				type = "NORMAL";
 		} else
 			return null;
 
-		return schematicPut;
+		return Arrays.asList(schematicPut, type);
 	}
 
 	/*
