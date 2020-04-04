@@ -64,19 +64,19 @@ public class SchematicCache {
 		String schematicPut = null;
 		String type = null;
 
-		if (!item.getItemMeta().getDisplayName().equals("")) {
-			ConfigurationSection configSection = config.getConfigurationSection(item.getItemMeta().getDisplayName());
-			if (configSection != null)
-				for (String key : configSection.getKeys(false)) {
-					if (key.equals("Schematic"))
-						schematicPut = configSection.getString(key);
-					if (key.equals("Type"))
-						type = configSection.getString(key);
-				}
-			if (type == null)
-				type = "NORMAL";
-		} else
+		if (item.getItemMeta().getDisplayName().equals(""))
 			return null;
+		ConfigurationSection configSection = config.getConfigurationSection(item.getItemMeta().getDisplayName());
+		if (configSection == null)
+			return null;
+		for (String key : configSection.getKeys(false)) {
+			if (key.equals("Schematic"))
+				schematicPut = configSection.getString(key);
+			if (key.equals("Type"))
+				type = configSection.getString(key);
+		}
+		if (type == null)
+			type = "NORMAL";
 
 		return Arrays.asList(schematicPut, type);
 	}
