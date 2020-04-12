@@ -23,6 +23,7 @@ import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import de.craftlancer.clclans.CLClans;
+import de.craftlancer.clclans.Clan;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
@@ -30,17 +31,24 @@ import me.sizzlemcgrizzle.blueprints.api.BlueprintPasteEvent;
 import me.sizzlemcgrizzle.blueprints.conversation.ConfirmationPrompt;
 import me.sizzlemcgrizzle.blueprints.conversation.FormattedConversable;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
+import me.sizzlemcgrizzle.blueprints.util.MaterialUtil;
 import org.bukkit.*;
+import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Directional;
+import org.bukkit.block.data.Rotatable;
 import org.bukkit.boss.BossBar;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationFactory;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.mineacademy.fo.Common;
+import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.CompSound;
 
 import java.io.File;
@@ -55,7 +63,6 @@ public class Blueprint {
 	private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
 	private BlueprintsPlugin blueprintsPlugin = (BlueprintsPlugin) Bukkit.getPluginManager().getPlugin("Blueprints");
 
-	private final String notInClaim = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BLUEPRINT_NOT_IN_CLAIM;
 	private final String blocksInWay = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_TRUE_MESSAGE;
 	private final String blocksInwayNoPreview = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_FALSE_MESSAGE;
 	private final String schematicFileNoExist = Settings.Messages.MESSAGE_PREFIX + "&cThis blueprint is not valid! Please contact an administrator if you think this is an error.";
@@ -82,6 +89,7 @@ public class Blueprint {
 
 	private Set<Location> pasteBlockSet = new HashSet<>();
 	private Set<Location> errorBlockSet = new HashSet<>();
+	private Set<Location> bannerSet = new HashSet<>();
 
 	private Conversation convo;
 
@@ -104,7 +112,6 @@ public class Blueprint {
 	}
 
 	boolean start() {
-		block.setType(Material.AIR);
 
 		if (player.isConversing()) {
 			Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&ePlease confirm/deny your existing placement before making a new one!");
@@ -136,6 +143,7 @@ public class Blueprint {
 			return true;
 		}
 
+		block.setType(Material.AIR);
 		sendFakeBlocks();
 
 		if (Settings.PLAY_SOUNDS)
@@ -176,9 +184,12 @@ public class Blueprint {
 			Operation previewOperation = holder.createPaste(new AbstractDelegateExtent(editSession) {
 				@Override
 				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
+					Location loc = new Location(world, location.getX(), location.getY(), location.getZ());
+					pasteBlockSet.add(loc);
+					bannerSet.add(loc);
 					com.sk89q.worldedit.entity.Player wePlayer = BukkitAdapter.adapt(player);
-					wePlayer.sendFakeBlock(location, block);
-					pasteBlockSet.add(new Location(world, location.getX(), location.getY(), location.getZ()));
+					if (!MaterialUtil.isBanner(loc.getBlock().getType()))
+						wePlayer.sendFakeBlock(location, block);
 					return true;
 				}
 			})
@@ -285,8 +296,6 @@ public class Blueprint {
 		for (Location location : pasteBlockSet) {
 			player.sendBlockChange(location, location.getBlock().getBlockData());
 		}
-
-
 		BlueprintPasteEvent event = new BlueprintPasteEvent(type, player, schematic, gameMode, item, location);
 		Common.callEvent(event);
 		if (event.isCancelled())
@@ -306,6 +315,10 @@ public class Blueprint {
 			bossBar.removePlayer(player);
 			if (Settings.PLAY_SOUNDS)
 				player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
+
+			//Banner setting
+			new AdjustBannerRunnable(player, clans, bannerSet).runTaskLater(SimplePlugin.getInstance(), 5);
+
 			Common.tell(player, placementAccepted);
 		} catch (WorldEditException | IOException e) {
 			e.printStackTrace();
@@ -425,5 +438,60 @@ public class Blueprint {
 		else
 			player.getInventory().addItem(item);
 
+	}
+
+	private static class AdjustBannerRunnable extends BukkitRunnable {
+		Set<Location> bannerSet;
+		CLClans clans;
+		Player player;
+
+
+		AdjustBannerRunnable(Player player, CLClans clans, Set<Location> bannerSet) {
+			this.player = player;
+			this.clans = clans;
+			this.bannerSet = bannerSet;
+		}
+
+		@Override
+		public void run() {
+			for (Location bannerLocation : bannerSet) {
+				Clan clan = clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
+				if (clan == null || clan.getBanner() == null)
+					break;
+				if (!MaterialUtil.isBanner(bannerLocation.getBlock().getType())) {
+					continue;
+				}
+				//If the bannerLocation is a wall banner, set the type to the wall banner variant of the clan banner
+				if (bannerLocation.getBlock().getType().toString().contains("_WALL_BANNER")) {
+					Directional directional = (Directional) bannerLocation.getBlock().getBlockData();
+					BlockFace face = directional.getFacing();
+
+					bannerLocation.getBlock().setType(Material.getMaterial(clan.getBanner().getType().toString().replace("_BANNER", "_WALL_BANNER")));
+					//To apply direction
+
+					//Set face to what it was before.
+					Directional newFace = (Directional) bannerLocation.getBlock().getBlockData();
+					newFace.setFacing(face);
+					bannerLocation.getBlock().setBlockData(newFace);
+				} else {
+					Rotatable rotatable = (Rotatable) bannerLocation.getBlock().getBlockData();
+					BlockFace face = rotatable.getRotation();
+
+					bannerLocation.getBlock().setType(clan.getBanner().getType());
+
+					Rotatable newRotatable = (Rotatable) bannerLocation.getBlock().getBlockData();
+					newRotatable.setRotation(face);
+					bannerLocation.getBlock().setBlockData(newRotatable);
+				}
+
+				BannerMeta clanBanner = (BannerMeta) clan.getBanner().getItemMeta();
+				Banner banner = (Banner) bannerLocation.getBlock().getState();
+
+				if (clanBanner != null) {
+					banner.setPatterns(clanBanner.getPatterns());
+					banner.update();
+				}
+			}
+		}
 	}
 }

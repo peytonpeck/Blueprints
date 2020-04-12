@@ -4,8 +4,8 @@ import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandGroup;
 import me.sizzlemcgrizzle.blueprints.event.BlueprintListener;
 import me.sizzlemcgrizzle.blueprints.event.ReloadEvent;
 import me.sizzlemcgrizzle.blueprints.settings.Logs;
-import me.sizzlemcgrizzle.blueprints.settings.SchematicCache;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
+import me.sizzlemcgrizzle.blueprints.util.SchematicCache;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.boss.BarColor;
@@ -78,7 +78,6 @@ public class BlueprintsPlugin extends SimplePlugin {
 	}
 
 	public Set<String> getBlueprints() {
-		Common.log("uwu");
 		return this.blueprints;
 	}
 

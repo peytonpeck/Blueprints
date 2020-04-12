@@ -1,7 +1,8 @@
-package me.sizzlemcgrizzle.blueprints.settings;
+package me.sizzlemcgrizzle.blueprints.util;
 
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
+import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
