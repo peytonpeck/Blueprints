@@ -1,6 +1,7 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
+import me.sizzlemcgrizzle.blueprints.settings.SchematicCache;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -19,12 +20,14 @@ public class BlueprintsAddCommand extends SimpleSubCommand {
 	public BlueprintsAddCommand(final SimpleCommandGroup parent) {
 		super(parent, "add");
 		setMinArguments(1);
-		setUsage("<schematicname.schematic>");
+		setUsage("<schematicname.schematic> <type>");
 		setPermission("blueprints.add");
 	}
 
 	@Override
 	protected List<String> tabComplete() {
+		if (args.length == 1)
+			return completeLastWord(SchematicCache.getSchematics());
 		if (args.length == 2)
 			return completeLastWord(Settings.TYPES);
 		return new ArrayList<>();
@@ -32,13 +35,11 @@ public class BlueprintsAddCommand extends SimpleSubCommand {
 
 	@Override
 	protected void onCommand() {
-		String type;
-
 		checkConsole();
+		final ItemStack blueprint = getPlayer().getInventory().getItemInMainHand();
+		String type = "NORMAL";
 
-		if (args[1] == null)
-			type = "NORMAL";
-		else {
+		if (args.length > 1) {
 			type = args[1];
 			if (!Settings.TYPES.contains(type)) {
 				tell(Settings.Messages.MESSAGE_PREFIX + "&6" + args[1] + "&e is not a valid blueprint type! Use &6/blueprints addtype &eto add a type.");
@@ -46,11 +47,10 @@ public class BlueprintsAddCommand extends SimpleSubCommand {
 			}
 
 		}
-		final ItemStack blueprint = getPlayer().getInventory().getItemInMainHand();
 
 		try {
 			Common.tell(getPlayer(), blueprintsPlugin.schematicCache().addBlueprint(args[0], blueprint, type));
-			blueprintsPlugin.schematicCache().getSchematicFor(getPlayer().getInventory().getItemInMainHand());
+			blueprintsPlugin.cacheBlueprints();
 
 		} catch (final IOException | InvalidConfigurationException e) {
 			e.printStackTrace();

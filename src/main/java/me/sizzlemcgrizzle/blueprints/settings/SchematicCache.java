@@ -22,6 +22,22 @@ public class SchematicCache {
 
 	private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
 
+	public static List<String> getSchematics() {
+		WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
+		File newFile = new File(worldEditPlugin.getDataFolder() + File.separator + "schematics");
+
+		List<String> list = new ArrayList<>();
+
+		if (!newFile.exists() || newFile.listFiles() == null) {
+			return list;
+		}
+
+		for (File file : newFile.listFiles())
+			list.add(file.getName());
+		return list;
+
+	}
+
 	/*
 	 * Adds a blueprint from a string (the schematic file name) and a block (item in hand).
 	 */

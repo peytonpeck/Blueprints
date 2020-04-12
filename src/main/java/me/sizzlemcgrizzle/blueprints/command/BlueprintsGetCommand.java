@@ -1,6 +1,7 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
+import me.sizzlemcgrizzle.blueprints.settings.SchematicCache;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -9,6 +10,7 @@ import org.mineacademy.fo.command.SimpleCommandGroup;
 import org.mineacademy.fo.command.SimpleSubCommand;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class BlueprintsGetCommand extends SimpleSubCommand {
@@ -19,6 +21,13 @@ public class BlueprintsGetCommand extends SimpleSubCommand {
 		setMinArguments(1);
 		setUsage("<schematicname.schematic>");
 		setPermission("blueprints.get");
+	}
+
+	@Override
+	protected List<String> tabComplete() {
+		if (args.length == 1)
+			return completeLastWord(SchematicCache.getSchematics());
+		return new ArrayList<>();
 	}
 
 	@Override

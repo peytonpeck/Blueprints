@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a blueprint placement is confirmed.
- */
+ **/
 public class BlueprintPasteEvent extends Event implements Cancellable {
 	private static final HandlerList handlers = new HandlerList();
 

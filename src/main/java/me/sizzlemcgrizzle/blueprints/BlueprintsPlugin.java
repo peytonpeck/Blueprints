@@ -1,7 +1,6 @@
 package me.sizzlemcgrizzle.blueprints;
 
 import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandGroup;
-import me.sizzlemcgrizzle.blueprints.event.Blueprint;
 import me.sizzlemcgrizzle.blueprints.event.BlueprintListener;
 import me.sizzlemcgrizzle.blueprints.event.ReloadEvent;
 import me.sizzlemcgrizzle.blueprints.settings.Logs;
@@ -13,22 +12,25 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
-import org.bukkit.entity.Player;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.settings.YamlStaticConfig;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 public class BlueprintsPlugin extends SimplePlugin {
 
 	private ReloadEvent event = new ReloadEvent();
 	private SchematicCache schematicCache;
 	private Logs logs;
-	private HashMap<Player, Blueprint> map = new HashMap<>();
 	private BossBar bossBar;
+	private Set<String> blueprints;
 
 	@Override
 	public void onPluginStart() {
@@ -46,6 +48,11 @@ public class BlueprintsPlugin extends SimplePlugin {
 		if (Bukkit.getPluginManager().isPluginEnabled("CLClans"))
 			Common.log("Successfully hooked into CLClans!");
 
+		try {
+			cacheBlueprints();
+		} catch (IOException | InvalidConfigurationException e) {
+			e.printStackTrace();
+		}
 		this.schematicCache = new SchematicCache();
 		this.logs = new Logs();
 		this.bossBar = this.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SOLID, BarFlag.CREATE_FOG);
@@ -55,6 +62,11 @@ public class BlueprintsPlugin extends SimplePlugin {
 	@Override
 	protected void onPluginReload() {
 		Bukkit.getPluginManager().callEvent(event);
+		try {
+			cacheBlueprints();
+		} catch (IOException | InvalidConfigurationException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public SchematicCache schematicCache() {
@@ -65,6 +77,22 @@ public class BlueprintsPlugin extends SimplePlugin {
 		return logs;
 	}
 
+	public Set<String> getBlueprints() {
+		Common.log("uwu");
+		return this.blueprints;
+	}
+
+	public void cacheBlueprints() throws IOException, InvalidConfigurationException {
+		File file = new File(BlueprintsPlugin.getData().getAbsolutePath() + File.separator + "blueprints.yml");
+		YamlConfiguration config = new YamlConfiguration();
+		config.load(file);
+
+		Common.log("Caching blueprints for optimization...");
+		blueprints = config.getKeys(false);
+
+		config.save(file);
+
+	}
 
 	public BossBar getBossBar() {
 		return bossBar;

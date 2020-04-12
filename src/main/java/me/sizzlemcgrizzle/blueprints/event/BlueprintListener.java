@@ -1,6 +1,5 @@
 package me.sizzlemcgrizzle.blueprints.event;
 
-import com.sk89q.worldedit.WorldEditException;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -22,7 +21,7 @@ public class BlueprintListener implements Listener {
 	private BlueprintsPlugin blueprintsPlugin = (BlueprintsPlugin) Bukkit.getPluginManager().getPlugin("Blueprints");
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-	private void buildBlueprint(BlockPlaceEvent event) throws IOException, InvalidConfigurationException, WorldEditException {
+	private void buildBlueprint(BlockPlaceEvent event) throws IOException, InvalidConfigurationException {
 		Player player = event.getPlayer();
 		ItemStack item = event.getItemInHand().clone();
 		Block block = event.getBlockPlaced();
@@ -31,7 +30,10 @@ public class BlueprintListener implements Listener {
 		String schematic;
 		String type;
 
-		if (blueprintsPlugin.schematicCache().getSchematicFor(item) != null) {
+		if (item.getItemMeta() == null)
+			return;
+
+		if (blueprintsPlugin.getBlueprints().contains(item.getItemMeta().getDisplayName())) {
 			List<String> list = blueprintsPlugin.schematicCache().getSchematicFor(event.getItemInHand());
 			schematic = list.get(0);
 			type = list.get(1);
