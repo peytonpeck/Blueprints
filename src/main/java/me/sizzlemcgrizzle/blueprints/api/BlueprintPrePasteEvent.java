@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a blueprint placement is confirmed.
  **/
-public class BlueprintPasteEvent extends Event implements Cancellable {
+public class BlueprintPrePasteEvent extends Event implements Cancellable {
 	private static final HandlerList handlers = new HandlerList();
 
 	private String type;
@@ -24,7 +24,7 @@ public class BlueprintPasteEvent extends Event implements Cancellable {
 
 	private boolean isCancelled = false;
 
-	public BlueprintPasteEvent(String type, Player player, String schematic, GameMode gamemode, ItemStack item, Location location) {
+	public BlueprintPrePasteEvent(String type, Player player, String schematic, GameMode gamemode, ItemStack item, Location location) {
 		this.type = type;
 		this.player = player;
 		this.schematic = schematic;

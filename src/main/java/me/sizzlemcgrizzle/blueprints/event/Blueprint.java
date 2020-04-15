@@ -27,7 +27,8 @@ import de.craftlancer.clclans.Clan;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
-import me.sizzlemcgrizzle.blueprints.api.BlueprintPasteEvent;
+import me.sizzlemcgrizzle.blueprints.api.BlueprintPostPasteEvent;
+import me.sizzlemcgrizzle.blueprints.api.BlueprintPrePasteEvent;
 import me.sizzlemcgrizzle.blueprints.conversation.ConfirmationPrompt;
 import me.sizzlemcgrizzle.blueprints.conversation.FormattedConversable;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
@@ -296,7 +297,7 @@ public class Blueprint {
 		for (Location location : pasteBlockSet) {
 			player.sendBlockChange(location, location.getBlock().getBlockData());
 		}
-		BlueprintPasteEvent event = new BlueprintPasteEvent(type, player, schematic, gameMode, item, location);
+		BlueprintPrePasteEvent event = new BlueprintPrePasteEvent(type, player, schematic, gameMode, item, location);
 		Common.callEvent(event);
 		if (event.isCancelled())
 			return;
@@ -323,6 +324,7 @@ public class Blueprint {
 		} catch (WorldEditException | IOException e) {
 			e.printStackTrace();
 		}
+		Common.callEvent(new BlueprintPostPasteEvent(type, player, schematic, gameMode, item, location));
 	}
 
 	private boolean isTrusted(Location loc) {
