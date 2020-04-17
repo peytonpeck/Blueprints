@@ -8,6 +8,8 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 /**
  * Called when a blueprint placement is confirmed.
  **/
@@ -20,8 +22,9 @@ public class BlueprintPostPasteEvent extends Event {
 	private GameMode gamemode;
 	private ItemStack item;
 	private Location location;
+	private List<Location> pasteSet;
 
-	public BlueprintPostPasteEvent(String type, Player player, String schematic, GameMode gamemode, ItemStack item, Location location) {
+	public BlueprintPostPasteEvent(String type, Player player, String schematic, GameMode gamemode, ItemStack item, Location location, List<Location> set) {
 		this.type = type;
 		this.player = player;
 		this.schematic = schematic;
@@ -61,5 +64,9 @@ public class BlueprintPostPasteEvent extends Event {
 
 	public GameMode getGamemode() {
 		return gamemode;
+	}
+
+	public List<Location> getBlocksPasted() {
+		return pasteSet;
 	}
 }

@@ -56,7 +56,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class Blueprint {
@@ -91,6 +93,7 @@ public class Blueprint {
 	private Set<Location> pasteBlockSet = new HashSet<>();
 	private Set<Location> errorBlockSet = new HashSet<>();
 	private Set<Location> bannerSet = new HashSet<>();
+	private List<Location> pasteSet = new ArrayList<>();
 
 	private Conversation convo;
 
@@ -293,38 +296,31 @@ public class Blueprint {
 		return false;
 	}
 
-	public void complete() {
+	public void complete() throws IOException {
+		//If there are still fake blocks, clear them.
 		for (Location location : pasteBlockSet) {
 			player.sendBlockChange(location, location.getBlock().getBlockData());
 		}
+
+		//If cancelled, the placement will be cancelled.
 		BlueprintPrePasteEvent event = new BlueprintPrePasteEvent(type, player, schematic, gameMode, item, location);
 		Common.callEvent(event);
-		if (event.isCancelled())
-			return;
+		if (event.isCancelled()) {
+			if (inventory.firstEmpty() == -1)
+				world.dropItemNaturally(player.getLocation(), item);
+			else
+				player.getInventory().addItem(item);
+			blueprintsPlugin.logs().addToLogs(player, location, schematic, "cancelled by event");
 
-		try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(world), -1)) {
-			Operation operation = holder
-					.createPaste(editSession)
-					.to(BlockVector3.at(location.getX(), location.getY(), location.getZ()))
-					.ignoreAirBlocks(true)
-					.copyEntities(false)
-					.copyBiomes(false)
-					.build();
-
-			Operations.complete(operation);
+		} else {
+			pasteAndGetPasteBlocks();
 			blueprintsPlugin.logs().addToLogs(player, location, schematic, "confirmed");
-			bossBar.removePlayer(player);
 			if (Settings.PLAY_SOUNDS)
 				player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
-
-			//Banner setting
 			new AdjustBannerRunnable(player, clans, bannerSet).runTaskLater(SimplePlugin.getInstance(), 5);
-
 			Common.tell(player, placementAccepted);
-		} catch (WorldEditException | IOException e) {
-			e.printStackTrace();
+			Common.callEvent(new BlueprintPostPasteEvent(type, player, schematic, gameMode, item, location, pasteSet));
 		}
-		Common.callEvent(new BlueprintPostPasteEvent(type, player, schematic, gameMode, item, location));
 	}
 
 	private boolean isTrusted(Location loc) {
@@ -494,6 +490,35 @@ public class Blueprint {
 					banner.update();
 				}
 			}
+		}
+	}
+
+	private void pasteAndGetPasteBlocks() {
+		try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(world), -1)) {
+			Operation previewOperation = holder.createPaste(new AbstractDelegateExtent(editSession) {
+				@Override
+				public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
+					pasteSet.add(new Location(world, location.getX(), location.getY(), location.getZ()));
+					return true;
+				}
+			})
+					.to(BlockVector3.at(location.getX(), location.getY(), location.getZ()))
+					.copyBiomes(false)
+					.copyEntities(false)
+					.ignoreAirBlocks(true)
+					.build();
+			Operations.complete(previewOperation);
+			Operation operation = holder
+					.createPaste(editSession)
+					.to(BlockVector3.at(location.getX(), location.getY(), location.getZ()))
+					.ignoreAirBlocks(true)
+					.copyEntities(false)
+					.copyBiomes(false)
+					.build();
+
+			Operations.complete(operation);
+		} catch (WorldEditException e) {
+			e.printStackTrace();
 		}
 	}
 }
