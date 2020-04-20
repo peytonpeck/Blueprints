@@ -10,7 +10,10 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when a blueprint placement is confirmed.
+ * Called when a blueprint placement is called.
+ * If cancelled, the blueprint placement will be cancelled.
+ *
+ * @see org.bukkit.event.Cancellable
  **/
 public class BlueprintPrePasteEvent extends Event implements Cancellable {
 	private static final HandlerList handlers = new HandlerList();
