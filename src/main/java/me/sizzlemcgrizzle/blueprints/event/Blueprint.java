@@ -124,7 +124,7 @@ public class Blueprint {
      * Starts the process. If something goes wrong, it will cancel and return true.
      */
     boolean start() {
-        
+        block.setType(Material.AIR);
         if (player.isConversing()) {
             Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&ePlease confirm/deny your existing placement before making a new one!");
             return true;
@@ -155,7 +155,6 @@ public class Blueprint {
             return true;
         }
         
-        block.setType(Material.AIR);
         sendFakeBlocks();
         
         if (Settings.PLAY_SOUNDS)
