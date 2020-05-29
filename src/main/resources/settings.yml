@@ -8,8 +8,6 @@
 Play_Sounds: true
 Blueprint_Types:
   - NORMAL
-  - STONECRUSHER
-  - PORTAL
 Block:
   Bossbar_Duration: 60
   Show_Error_Preview: true
@@ -59,11 +57,12 @@ Messages:
   Message_Prefix: "&8[&3Blueprints&8] "
   Reload_Success: "&7Blueprints configuration has been successfully reloaded."
   Build_Success: "&bYour blueprint has been built!"
-  Blueprint_Not_In_Claim: "&cYou must place your blueprint in a claim!"
   Player_Not_Trusted: "&cYou must place your blueprint in a claim you are trusted in!"
-  Blueprint_In_Admin_Claim: "&cPart of/your entire blueprint has been placed in an admin claim, do not try to grief!"
   Show_Error_True_Message: "&cBlueprint cannot be placed because either: &61)&e There are blocks in the way, &62) &eThe highlighted blocks not in a/your claim, &63)&e The highlighted blocks are in an admin claim."
   Show_Error_False_Message: "&cYour blueprint cannot be built here because there are blocks in the way."
+  Placement_Denied: "&eYou have cancelled the placement and your item has been returned."
+  Is_Conversing: "&ePlease confirm/deny your existing placement before making a new one!"
+  Invalid_Schematic: "&cThis blueprint is not valid! Please contact an administrator immediately!"
 
 Log_Lag_Over_Milis: 100
 Debug: []

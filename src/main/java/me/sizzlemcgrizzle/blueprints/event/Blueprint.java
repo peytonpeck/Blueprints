@@ -70,14 +70,14 @@ import java.util.Set;
 public class Blueprint {
 	private CLClans clans = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
 	private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
-	private BlueprintsPlugin blueprintsPlugin = (BlueprintsPlugin) Bukkit.getPluginManager().getPlugin("Blueprints");
+	private BlueprintsPlugin blueprintsPlugin = BlueprintsPlugin.instance;
 	
 	private static final String BLOCKS_IN_WAY = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_TRUE_MESSAGE;
 	private static final String BLOCKS_IN_WAY_NO_PREVIEW = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_FALSE_MESSAGE;
-	private static final String PLACEMENT_DENIED = Settings.Messages.MESSAGE_PREFIX + "&eYou have cancelled the placement and your item has been returned.";
+	private static final String PLACEMENT_DENIED = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.PLACEMENT_DENIED;
 	private static final String PLACEMENT_ACCEPTED = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BUILD_SUCCESS;
-	static final String IS_CONVERSING = Settings.Messages.MESSAGE_PREFIX + "&ePlease confirm/deny your existing placement before making a new one!";
-	static final String SCHEMATIC_FILE_NO_EXIST = Settings.Messages.MESSAGE_PREFIX + "&cThis blueprint is not valid! Please contact an administrator if you think this is an error.";
+	static final String IS_CONVERSING = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.IS_CONVERSING;
+	static final String INVALID_SCHEMATIC = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.INVALID_SCHEMATIC;
 	
 	private Player player;
 	private Location location;
@@ -96,9 +96,7 @@ public class Blueprint {
 	private Inventory inventory;
 	private String type;
 	
-	//Responsible for rotations
 	private int counter;
-	//The number of rotations from north direction, 0 if north;
 	private int rotationsFromNorth;
 	
 	private Set<Location> pasteBlockSet = new HashSet<>();
@@ -304,9 +302,9 @@ public class Blueprint {
 					ChatColor color = clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId())).getColor();
 					for (BlockVector3 blockVector3 : clipboard.getRegion()) {
 						if (clipboard.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_WOOL))
-							clipboard.setBlock(blockVector3, ColorCache.getWoolColor(color));
+							clipboard.setBlock(blockVector3, MaterialUtil.getWoolColor(color));
 						if (clipboard.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_CONCRETE))
-							clipboard.setBlock(blockVector3, ColorCache.getConcreteColor(color));
+							clipboard.setBlock(blockVector3, MaterialUtil.getConcreteColor(color));
 					}
 				}
 			
@@ -338,23 +336,30 @@ public class Blueprint {
 	/**
 	 * Completes the operation.
 	 */
-	public void complete() throws IOException {
+	public void complete() {
 		//If there are still fake blocks, clear them.
 		pasteBlockSet.forEach(loc -> player.sendBlockChange(loc, loc.getBlock().getBlockData()));
 		
 		//If cancelled, the placement will be cancelled.
 		BlueprintPrePasteEvent event = new BlueprintPrePasteEvent(type, player, schematic, gameMode, item, location);
 		Common.callEvent(event);
+		
 		if (event.isCancelled()) {
 			if (!gameMode.equals(GameMode.CREATIVE))
 				player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
 			Logs.addToLogs(player, location, schematic, "cancelled by event");
 		} else {
+			
 			pasteAndGetPasteBlocks();
+			
 			Logs.addToLogs(player, location, schematic, "confirmed");
+			
 			if (Settings.PLAY_SOUNDS)
 				player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
-			new AdjustBannerRunnable(player, clans, bannerSet).runTaskLater(SimplePlugin.getInstance(), 5);
+			
+			if (clans != null && clans.isEnabled())
+				new AdjustBannerRunnable(player, clans, bannerSet).runTaskLater(SimplePlugin.getInstance(), 5);
+			
 			Common.tell(player, PLACEMENT_ACCEPTED);
 			Common.callEvent(new BlueprintPostPasteEvent(type, player, schematic, gameMode, item, location, pasteSet));
 		}
@@ -364,19 +369,17 @@ public class Blueprint {
 	 * Sees if a player is trusted at a given location.
 	 */
 	private boolean isTrusted(Location loc) {
-		if (GriefPrevention.instance.isEnabled() && !block.getType().equals(Material.LILY_PAD)) {
-			Claim claim = null;
-			for (Claim c : GriefPrevention.instance.dataStore.getClaims())
-				if (c.contains(loc, true, false))
-					claim = c;
-			if (claim == null)
-				return true;
-			if (claim.getOwnerName().equals(player.getName()))
-				return true;
-			if (claim.allowBuild(player, loc.getBlock().getType()) == null)
-				return true;
-		}
-		return false;
+		if (!GriefPrevention.instance.isEnabled())
+			return true;
+		
+		Claim claim = null;
+		for (Claim c : GriefPrevention.instance.dataStore.getClaims())
+			if (c.contains(loc, true, false))
+				claim = c;
+		
+		return claim == null
+				|| claim.getOwnerName().equals(player.getName())
+				|| claim.allowBuild(player, loc.getBlock().getType()) == null;
 	}
 	
 	/**
@@ -444,16 +447,15 @@ public class Blueprint {
 				.withFirstPrompt(new ConfirmationPrompt(this))
 				.addConversationAbandonedListener(conversationAbandonedEvent -> {
 					if (!conversationAbandonedEvent.gracefulExit()) {
+						
 						Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&eYour placement has been cancelled.");
-						try {
-							Logs.addToLogs(player, block.getLocation(), schematic, "abandoned");
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
+						Logs.addToLogs(player, block.getLocation(), schematic, "abandoned");
+						
 						if (inventory.firstEmpty() == -1)
 							world.dropItemNaturally(player.getLocation(), item);
 						else if (!gameMode.equals(GameMode.CREATIVE))
 							player.getInventory().addItem(item);
+						
 						if (Settings.PLAY_SOUNDS)
 							player.playSound(player.getLocation(), CompSound.LEVEL_UP.getSound(), 1F, 1F);
 					}

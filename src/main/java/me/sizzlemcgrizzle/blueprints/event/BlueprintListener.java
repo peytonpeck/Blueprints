@@ -1,8 +1,10 @@
 package me.sizzlemcgrizzle.blueprints.event;
 
+import de.craftlancer.core.util.Tuple;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
+import me.sizzlemcgrizzle.blueprints.api.BlueprintPostPasteEvent;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
-import org.bukkit.Bukkit;
+import me.sizzlemcgrizzle.blueprints.util.SchematicUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -17,11 +19,9 @@ import org.bukkit.inventory.ItemStack;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.remain.CompSound;
 
-import java.util.List;
-
 public class BlueprintListener implements Listener {
 	
-	private BlueprintsPlugin blueprintsPlugin = (BlueprintsPlugin) Bukkit.getPluginManager().getPlugin("Blueprints");
+	private BlueprintsPlugin blueprintsPlugin = BlueprintsPlugin.instance;
 	
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	private void buildBlueprint(final BlockPlaceEvent event) {
@@ -39,9 +39,9 @@ public class BlueprintListener implements Listener {
 			return;
 		
 		if (blueprintsPlugin.getBlueprints().contains(item.getItemMeta().getDisplayName())) {
-			List<String> list = blueprintsPlugin.schematicCache().getSchematicFor(event.getItemInHand());
-			schematic = list.get(0);
-			type = list.get(1);
+			Tuple<String, String> tuple = SchematicUtil.getSchematicFor(item);
+			schematic = tuple.getKey();
+			type = tuple.getValue();
 			
 			Blueprint blueprint = new Blueprint(player, blockLocation, item, schematic, block, world, player.getGameMode(), type, face);
 			
@@ -73,12 +73,22 @@ public class BlueprintListener implements Listener {
 		
 		
 		if (blueprint.getClipboard() == null) {
-			Common.tell(player, Blueprint.SCHEMATIC_FILE_NO_EXIST);
+			Common.tell(player, Blueprint.INVALID_SCHEMATIC);
 			if (Settings.PLAY_SOUNDS)
-				player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+				player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 0.5F, 0.5F);
 			return true;
 		}
 		return false;
+	}
+	
+	@EventHandler(ignoreCancelled = true)
+	public void onBlueprintPaste(BlueprintPostPasteEvent event) {
+		if (!event.getType().equalsIgnoreCase("SHIP"))
+			return;
+		
+		event.getBlocksPasted().stream()
+				.filter(location -> location.getBlock().getType() == Material.BARRIER)
+				.forEach(location -> location.getBlock().setType(Material.AIR));
 	}
 	
 }

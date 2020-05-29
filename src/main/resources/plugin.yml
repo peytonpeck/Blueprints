@@ -17,6 +17,8 @@ permissions:
     default: op
   blueprints.get:
     default: op
+  blueprints.addtype:
+    default: op
 commands:
   blueprints list:
     description: list of current blueprints that are clickable.
@@ -28,4 +30,6 @@ commands:
     description: removes the blueprint that is in your hand
   blueprints reload:
     description: reloads the configuration.
+  blueprints addtype:
+    description: add a type of blueprint to use with a third party plugin
 

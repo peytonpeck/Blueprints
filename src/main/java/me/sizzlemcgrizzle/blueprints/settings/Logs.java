@@ -11,23 +11,27 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class Logs {
-    
-    public static void addToLogs(Player player, Location location, String schematic, String reason) throws IOException {
-        File file = new File(BlueprintsPlugin.getData().getAbsolutePath() + File.separator + "/logs.txt");
-        
-        if (!file.exists())
-            file.createNewFile();
-        
-        BufferedWriter writer = new BufferedWriter(
-                new FileWriter(BlueprintsPlugin.getData().getAbsolutePath() + File.separator + "/logs.txt", true)
-        );
-        writer.newLine();
-        writer.write(player.getUniqueId() + " (" + player.getName() + ")"
-                + " placed " + schematic
-                + " at location (" + (int) location.getX() + ", " + (int) location.getY() + ", " + (int) location.getZ() + ") at time ("
-                + TimeUtil.getFormattedDate() + ")."
-                + " Placement was " + reason + ".");
-        writer.close();
-        
-    }
+	
+	public static void addToLogs(Player player, Location location, String schematic, String reason) {
+		File file = new File(BlueprintsPlugin.getData().getAbsolutePath() + File.separator + "/logs.txt");
+		
+		try {
+			if (!file.exists())
+				file.createNewFile();
+			
+			BufferedWriter writer = new BufferedWriter(
+					new FileWriter(BlueprintsPlugin.getData().getAbsolutePath() + File.separator + "/logs.txt", true)
+			);
+			writer.newLine();
+			writer.write(player.getUniqueId() + " (" + player.getName() + ")"
+					+ " placed " + schematic
+					+ " at location (" + (int) location.getX() + ", " + (int) location.getY() + ", " + (int) location.getZ() + ") at time ("
+					+ TimeUtil.getFormattedDate() + ")."
+					+ " Placement was " + reason + ".");
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
 }

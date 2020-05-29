@@ -8,8 +8,6 @@ import org.bukkit.conversations.Prompt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-
 /*
  * Made by SydMontague:
  * https://github.com/SydMontague/CLCore/tree/craftcitizen/src/main/java/de/craftlancer/core/conversation
@@ -30,11 +28,7 @@ public class ConfirmationPrompt extends NewPrompt {
 	@Override
 	protected @Nullable Prompt acceptValidatedInput(@NotNull ConversationContext conversationContext, @NotNull String input) {
 		if (ArrayUtils.contains(yes, input.toLowerCase())) {
-			try {
-				blueprint.complete();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			blueprint.complete();
 			blueprint = null;
 			return Prompt.END_OF_CONVERSATION;
 			
