@@ -11,50 +11,50 @@ import org.jetbrains.annotations.Nullable;
 import org.mineacademy.fo.model.SimpleComponent;
 
 public class NewPrompt extends FixedSetPrompt {
-	protected final BaseComponent promptText;
-
-	public NewPrompt(String text) {
-		this.promptText = SimpleComponent.of(text)
-				.append("&a&l [Yes] ")
-				.onClickRunCmd("/convo yes")
-				.append("&c&l[No] ")
-				.onClickRunCmd("/convo no")
-				.append("&6&l[90°] ")
-				.onClickRunCmd("/convo left")
-				.append("&6&l[-90°] ")
-				.onClickRunCmd("/convo right")
-				.append("\n&eMove blueprint? ")
-				.append("&9&l[+X] ")
-				.onClickRunCmd("/convo +x")
-				.append("&9&l[-X] ")
-				.onClickRunCmd("/convo -x")
-				.append("&9&l[+Z] ")
-				.onClickRunCmd("/convo +z")
-				.append("&9&l[-Z] ")
-				.onClickRunCmd("/convo -z")
-				.append("&b&l[Up] ")
-				.onClickRunCmd("/convo +y")
-				.append("&b&l[Down] ")
-				.onClickRunCmd("/convo -y")
-				.build();
-	}
-
-	@NotNull
-	@Override
-	public String getPromptText(ConversationContext context) {
-		return ComponentSerializer.toString(promptText);
-	}
-
-	@Override
-	protected boolean isInputValid(@NotNull ConversationContext context, @NotNull String input) {
-		String[] accepted = new String[]{"true", "false", "on", "off", "yes", "no", "y", "n", "1", "0",
-				"right", "wrong", "correct", "incorrect", "valid", "invalid", "right", "left",
-				"+x", "-x", "+y", "-y", "+z", "-z"};
-		return ArrayUtils.contains(accepted, input.toLowerCase());
-	}
-
-	@Override
-	protected @Nullable Prompt acceptValidatedInput(@NotNull ConversationContext conversationContext, @NotNull String s) {
-		return this.acceptValidatedInput(conversationContext, s);
-	}
+    protected final BaseComponent promptText;
+    
+    public NewPrompt(String text) {
+        this.promptText = SimpleComponent.of(text)
+                .append("&a&l [Yes] ")
+                .onClickRunCmd("/convo yes")
+                .append("&c&l[No] ")
+                .onClickRunCmd("/convo no")
+                .append("&6&l[90°] ")
+                .onClickRunCmd("/convo left")
+                .append("&6&l[-90°] ")
+                .onClickRunCmd("/convo right")
+                .append("\n&eMove blueprint? ")
+                .append("&9&l[+X] ")
+                .onClickRunCmd("/convo +x")
+                .append("&9&l[-X] ")
+                .onClickRunCmd("/convo -x")
+                .append("&9&l[+Z] ")
+                .onClickRunCmd("/convo +z")
+                .append("&9&l[-Z] ")
+                .onClickRunCmd("/convo -z")
+                .append("&b&l[Up] ")
+                .onClickRunCmd("/convo +y")
+                .append("&b&l[Down] ")
+                .onClickRunCmd("/convo -y")
+                .build();
+    }
+    
+    @NotNull
+    @Override
+    public String getPromptText(ConversationContext context) {
+        return ComponentSerializer.toString(promptText);
+    }
+    
+    @Override
+    protected boolean isInputValid(@NotNull ConversationContext context, @NotNull String input) {
+        String[] accepted = new String[]{"true", "false", "on", "off", "yes", "no", "y", "n", "1", "0",
+                "right", "wrong", "correct", "incorrect", "valid", "invalid", "right", "left",
+                "+x", "-x", "+y", "-y", "+z", "-z"};
+        return ArrayUtils.contains(accepted, input.toLowerCase());
+    }
+    
+    @Override
+    protected @Nullable Prompt acceptValidatedInput(@NotNull ConversationContext conversationContext, @NotNull String s) {
+        return this.acceptValidatedInput(conversationContext, s);
+    }
 }

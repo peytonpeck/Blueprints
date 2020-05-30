@@ -13,64 +13,64 @@ import org.jetbrains.annotations.Nullable;
  * https://github.com/SydMontague/CLCore/tree/craftcitizen/src/main/java/de/craftlancer/core/conversation
  */
 public class ConfirmationPrompt extends NewPrompt {
-	
-	private Blueprint blueprint;
-	private String[] yes = new String[]{"yes", "1", "true", "y", "correct", "valid"};
-	private String[] no = new String[]{"no", "0", "false", "n", "wrong", "invalid"};
-	
-	public ConfirmationPrompt(Blueprint blueprint) {
-		super(ChatColor.YELLOW + "Place blueprint?");
-		
-		this.blueprint = blueprint;
-		
-	}
-	
-	@Override
-	protected @Nullable Prompt acceptValidatedInput(@NotNull ConversationContext conversationContext, @NotNull String input) {
-		if (ArrayUtils.contains(yes, input.toLowerCase())) {
-			blueprint.complete();
-			blueprint = null;
-			return Prompt.END_OF_CONVERSATION;
-			
-			
-		} else if (ArrayUtils.contains(no, input.toLowerCase())) {
-			blueprint.cancel();
-			blueprint = null;
-			return Prompt.END_OF_CONVERSATION;
-			
-			
-		} else if (input.equalsIgnoreCase("right")) {
-			blueprint.transform(1);
-			return this;
-		} else if (input.equalsIgnoreCase("left")) {
-			blueprint.transform(-1);
-			return this;
-		} else if (input.equalsIgnoreCase("+x")) {
-			if (blueprint.setOrigin(1, 0, 0))
-				return Prompt.END_OF_CONVERSATION;
-			return this;
-		} else if (input.equalsIgnoreCase("-x")) {
-			if (blueprint.setOrigin(-1, 0, 0))
-				return Prompt.END_OF_CONVERSATION;
-			return this;
-		} else if (input.equalsIgnoreCase("+y")) {
-			if (blueprint.setOrigin(0, 1, 0))
-				return Prompt.END_OF_CONVERSATION;
-			return this;
-		} else if (input.equalsIgnoreCase("-y")) {
-			if (blueprint.setOrigin(0, -1, 0))
-				return Prompt.END_OF_CONVERSATION;
-			return this;
-		} else if (input.equalsIgnoreCase("+z")) {
-			if (blueprint.setOrigin(0, 0, 1))
-				return Prompt.END_OF_CONVERSATION;
-			return this;
-		} else if (input.equalsIgnoreCase("-z")) {
-			if (blueprint.setOrigin(0, 0, -1))
-				return Prompt.END_OF_CONVERSATION;
-			return this;
-		}
-		return Prompt.END_OF_CONVERSATION;
-	}
+    
+    private Blueprint blueprint;
+    private String[] yes = new String[]{"yes", "1", "true", "y", "correct", "valid"};
+    private String[] no = new String[]{"no", "0", "false", "n", "wrong", "invalid"};
+    
+    public ConfirmationPrompt(Blueprint blueprint) {
+        super(ChatColor.YELLOW + "Place blueprint?");
+        
+        this.blueprint = blueprint;
+        
+    }
+    
+    @Override
+    protected @Nullable Prompt acceptValidatedInput(@NotNull ConversationContext conversationContext, @NotNull String input) {
+        if (ArrayUtils.contains(yes, input.toLowerCase())) {
+            blueprint.complete();
+            blueprint = null;
+            return Prompt.END_OF_CONVERSATION;
+            
+            
+        } else if (ArrayUtils.contains(no, input.toLowerCase())) {
+            blueprint.cancel();
+            blueprint = null;
+            return Prompt.END_OF_CONVERSATION;
+            
+            
+        } else if (input.equalsIgnoreCase("right")) {
+            blueprint.transform(1);
+            return this;
+        } else if (input.equalsIgnoreCase("left")) {
+            blueprint.transform(-1);
+            return this;
+        } else if (input.equalsIgnoreCase("+x")) {
+            if (blueprint.setOrigin(1, 0, 0))
+                return Prompt.END_OF_CONVERSATION;
+            return this;
+        } else if (input.equalsIgnoreCase("-x")) {
+            if (blueprint.setOrigin(-1, 0, 0))
+                return Prompt.END_OF_CONVERSATION;
+            return this;
+        } else if (input.equalsIgnoreCase("+y")) {
+            if (blueprint.setOrigin(0, 1, 0))
+                return Prompt.END_OF_CONVERSATION;
+            return this;
+        } else if (input.equalsIgnoreCase("-y")) {
+            if (blueprint.setOrigin(0, -1, 0))
+                return Prompt.END_OF_CONVERSATION;
+            return this;
+        } else if (input.equalsIgnoreCase("+z")) {
+            if (blueprint.setOrigin(0, 0, 1))
+                return Prompt.END_OF_CONVERSATION;
+            return this;
+        } else if (input.equalsIgnoreCase("-z")) {
+            if (blueprint.setOrigin(0, 0, -1))
+                return Prompt.END_OF_CONVERSATION;
+            return this;
+        }
+        return Prompt.END_OF_CONVERSATION;
+    }
 }
 
