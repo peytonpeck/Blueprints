@@ -297,7 +297,7 @@ public class Blueprint {
         try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
             clipboard = reader.read();
             
-            if (clans.isEnabled())
+            if (clans != null && clans.isEnabled())
                 if (clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId())) != null) {
                     ChatColor color = clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId())).getColor();
                     for (BlockVector3 blockVector3 : clipboard.getRegion()) {

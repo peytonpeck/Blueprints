@@ -149,11 +149,7 @@ public class SchematicUtil {
         
         HashMap<ItemStack, String> listBlueprintMap = new HashMap<>();
         
-        try {
-            config.load(blueprintFile);
-        } catch (IOException | InvalidConfigurationException e) {
-            e.printStackTrace();
-        }
+        config = YamlConfiguration.loadConfiguration(blueprintFile);
         
         for (String itemName : config.getKeys(false)) {
             listBlueprintMap.put(config.getConfigurationSection(itemName).getItemStack("Blueprint"), config.getConfigurationSection(itemName).getString("Schematic"));
