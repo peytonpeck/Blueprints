@@ -1,13 +1,15 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
+import me.sizzlemcgrizzle.blueprints.Blueprint;
+import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
-import me.sizzlemcgrizzle.blueprints.util.SchematicUtil;
 import org.bukkit.inventory.ItemStack;
 import org.mineacademy.fo.command.SimpleCommandGroup;
 import org.mineacademy.fo.command.SimpleSubCommand;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class BlueprintsGetCommand extends SimpleSubCommand {
     
@@ -21,13 +23,13 @@ public class BlueprintsGetCommand extends SimpleSubCommand {
     @Override
     protected List<String> tabComplete() {
         if (args.length == 1)
-            return completeLastWord(SchematicUtil.getSchematics());
+            return completeLastWord(BlueprintsPlugin.instance.getBlueprints().stream().map(Blueprint::getSchematic).collect(Collectors.toList()));
         return new ArrayList<>();
     }
     
     @Override
     protected void onCommand() {
-        List<ItemStack> itemList = SchematicUtil.getBlueprint(args[0]);
+        List<ItemStack> itemList = BlueprintsPlugin.instance.getBlueprints().stream().filter(blueprint -> blueprint.getSchematic().equalsIgnoreCase(args[0])).map(Blueprint::getItem).collect(Collectors.toList());
         if (itemList.size() == 0)
             tell(Settings.Messages.MESSAGE_PREFIX + "&cThere are no blueprints using this schematic. See the list of blueprints with &4/blueprints list&c.");
         else {

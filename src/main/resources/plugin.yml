@@ -4,9 +4,12 @@ main: me.sizzlemcgrizzle.blueprints.BlueprintsPlugin
 author: sizzlemcgrizzle
 api-version: 1.13
 description: Place "blueprint" blocks to build schematics!
-
 softdepend: [CLClans, WorldEdit, WorldGuard]
 permissions:
+  blueprints.create.color:
+    default: op
+  blueprints.create:
+    default: true
   blueprints.add:
     default: op
   blueprints.remove:
@@ -20,16 +23,8 @@ permissions:
   blueprints.addtype:
     default: op
 commands:
-  blueprints list:
-    description: list of current blueprints that are clickable.
-  blueprints get:
-    description: used to get blueprints.
-  blueprints add:
-    description: add a blueprint with the block in your hand
-  blueprints remove:
-    description: removes the blueprint that is in your hand
-  blueprints reload:
-    description: reloads the configuration.
-  blueprints addtype:
-    description: add a type of blueprint to use with a third party plugin
+  blueprints:
+    description: Main blueprints command group
+  blueprint:
+    description: Command to create a player blueprint
 

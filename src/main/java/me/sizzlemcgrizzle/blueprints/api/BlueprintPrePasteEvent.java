@@ -7,7 +7,8 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
 
 /**
  * Called when a blueprint placement is called.
@@ -37,7 +38,8 @@ public class BlueprintPrePasteEvent extends Event implements Cancellable {
     }
     
     @Override
-    public @NotNull HandlerList getHandlers() {
+    public @Nonnull
+    HandlerList getHandlers() {
         return handlers;
     }
     

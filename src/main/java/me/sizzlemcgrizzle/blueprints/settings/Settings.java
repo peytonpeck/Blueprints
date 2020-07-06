@@ -1,6 +1,8 @@
 package me.sizzlemcgrizzle.blueprints.settings;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.permissions.Permission;
 import org.mineacademy.fo.collection.StrictList;
 import org.mineacademy.fo.settings.SimpleSettings;
 
@@ -26,12 +28,14 @@ public class Settings extends SimpleSettings {
     
     public static Boolean PLAY_SOUNDS;
     public static List<String> TYPES;
+    public static List<String> LIMITS;
     
     private static void init() {
         pathPrefix(null);
         PLAY_SOUNDS = getBoolean("Play_Sounds");
         TYPES = getStringList("Blueprint_Types");
-        
+        LIMITS = getStringList("Player_Blueprint_Limits");
+        LIMITS.forEach(limit -> Bukkit.getPluginManager().addPermission(new Permission(limit)));
     }
     
     public static class Messages {

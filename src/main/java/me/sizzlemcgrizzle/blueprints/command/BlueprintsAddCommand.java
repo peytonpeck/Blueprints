@@ -1,5 +1,6 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
+import me.sizzlemcgrizzle.blueprints.Blueprint;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import me.sizzlemcgrizzle.blueprints.util.SchematicUtil;
@@ -36,26 +37,15 @@ public class BlueprintsAddCommand extends SimpleSubCommand {
     protected void onCommand() {
         checkConsole();
         final ItemStack blueprint = getPlayer().getInventory().getItemInMainHand();
-        String type = "NORMAL";
         
         if (blueprint.getItemMeta() == null || !blueprint.getItemMeta().hasDisplayName()) {
             tell(notSpecial);
             return;
         }
         
-        
-        if (args.length >= 2) {
-            type = args[1];
-            if (!Settings.TYPES.contains(type)) {
-                tell(Settings.Messages.MESSAGE_PREFIX + "&6" + args[1] + "&e is not a valid blueprint type! Use &6/blueprints addtype &eto add a type.");
-                return;
-            }
-            
-        }
-        
-        if (SchematicUtil.addBlueprint(args[0], blueprint.clone(), type)) {
+        if (SchematicUtil.getSchematics().contains(args[0])) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&7You successfully added a blueprint with name " + blueprint.getItemMeta().getDisplayName() + " &7calling schematic &d" + args[0]);
-            blueprintsPlugin.setBlueprints();
+            BlueprintsPlugin.instance.addBlueprint(new Blueprint(blueprint.clone(), args[0], args.length > 1 ? args[1] : null));
         } else
             tell(Settings.Messages.MESSAGE_PREFIX + "&cThere is no such file '&4" + args[0] + "&c'. Please add the schematic to the Schematics folder.");
         

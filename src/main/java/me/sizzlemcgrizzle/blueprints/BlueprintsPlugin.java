@@ -1,40 +1,63 @@
 package me.sizzlemcgrizzle.blueprints;
 
+import me.ryanhamshire.GriefPrevention.Claim;
+import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandGroup;
+import me.sizzlemcgrizzle.blueprints.command.PlayerBlueprintCommandGroup;
 import me.sizzlemcgrizzle.blueprints.event.BlueprintListener;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
-import me.sizzlemcgrizzle.blueprints.util.SchematicUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.entity.Player;
 import org.mineacademy.fo.Common;
+import org.mineacademy.fo.FileUtil;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.settings.YamlStaticConfig;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class BlueprintsPlugin extends SimplePlugin {
     
     private BossBar bossBar;
-    private Set<String> blueprints;
     
-    public static File blueprintsFile;
+    private List<Blueprint> blueprints;
+    private List<InventoryLink> inventoryLinks;
+    
+    private Map<Player, BlueprintCreationSession> creationSessions = new HashMap<>();
+    
+    public static File BLUEPRINTS_FILE;
     public static BlueprintsPlugin instance;
     
     @Override
     public void onPluginStart() {
-        
         instance = this;
+        BLUEPRINTS_FILE = new File(getDataFolder(), "blueprints.yml");
+        inventoryLinks = new ArrayList<>();
+        
+        ConfigurationSerialization.registerClass(Blueprint.class);
+        ConfigurationSerialization.registerClass(PlayerBlueprint.class);
+        loadBlueprints();
         
         registerEvents(new BlueprintListener());
         
         registerCommands("blueprints", new BlueprintsCommandGroup());
+        registerCommands("blueprint", Collections.singletonList("playerblueprint"), new PlayerBlueprintCommandGroup());
         
         if (Bukkit.getPluginManager().isPluginEnabled("WorldEdit"))
             Common.log("Successfully hooked into World Edit!");
@@ -44,30 +67,114 @@ public class BlueprintsPlugin extends SimplePlugin {
         
         if (Bukkit.getPluginManager().isPluginEnabled("CLClans"))
             Common.log("Successfully hooked into CLClans!");
-        
-        setBlueprints();
-        
         this.bossBar = this.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SOLID, BarFlag.CREATE_FOG);
     }
     
     @Override
-    protected void onPluginReload() {
-        setBlueprints();
+    protected void onPluginStop() {
+        saveBlueprints();
+    }
+    
+    public static boolean isTrusted(Player player, Location loc) {
+        if (!GriefPrevention.instance.isEnabled())
+            return true;
         
-        blueprintsFile = new File(this.getDataFolder(), "blueprints.yml");
-        instance = this;
+        Claim claim = null;
+        for (Claim c : GriefPrevention.instance.dataStore.getClaims())
+            if (c.contains(loc, true, false))
+                claim = c;
+        
+        return claim == null
+                || claim.getOwnerName().equals(player.getName())
+                || claim.allowBuild(player, loc.getBlock().getType()) == null;
     }
     
-    public void setBlueprints() {
-        blueprints = SchematicUtil.cacheBlueprints();
+    private void loadBlueprints() {
+        if (!BLUEPRINTS_FILE.exists())
+            FileUtil.extract(BLUEPRINTS_FILE.getName());
+        
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(BLUEPRINTS_FILE);
+        
+        blueprints = config.contains("blueprints") ? (List<Blueprint>) config.getList("blueprints") : Collections.emptyList();
+        blueprints.addAll(config.contains("playerBlueprints") ? (List<Blueprint>) config.getList("playerBlueprints") : Collections.emptyList());
     }
     
-    public Set<String> getBlueprints() {
-        return this.blueprints;
+    private void saveBlueprints() {
+        if (!BLUEPRINTS_FILE.exists())
+            FileUtil.extract(BLUEPRINTS_FILE.getName());
+        
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(BLUEPRINTS_FILE);
+        
+        config.set("blueprints", blueprints.stream().filter(blueprint -> !(blueprint instanceof PlayerBlueprint)).collect(Collectors.toList()));
+        config.set("playerBlueprints", blueprints.stream().filter(blueprint -> blueprint instanceof PlayerBlueprint).collect(Collectors.toList()));
+        
+        try {
+            config.save(BLUEPRINTS_FILE);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
     
     public BossBar getBossBar() {
         return bossBar;
+    }
+    
+    public List<Blueprint> getBlueprints() {
+        return blueprints;
+    }
+    
+    public List<PlayerBlueprint> getPlayerBlueprints() {
+        return blueprints.stream().filter(blueprint -> blueprint instanceof PlayerBlueprint).map(blueprint -> (PlayerBlueprint) blueprint).collect(Collectors.toList());
+    }
+    
+    public void addBlueprint(Blueprint blueprint) {
+        blueprints.add(blueprint);
+    }
+    
+    public void removeBlueprint(Blueprint blueprint) {
+        blueprints.remove(blueprint);
+    }
+    
+    public void setBlueprints(List<Blueprint> list) {
+        blueprints = list;
+    }
+    
+    public Map<Player, BlueprintCreationSession> getCreationSessions() {
+        return creationSessions;
+    }
+    
+    public void addCreationSession(Player player, BlueprintCreationSession creationSession) {
+        creationSessions.put(player, creationSession);
+    }
+    
+    //Remove the creation session and cancel the particle runnable, if applicable
+    public void removeCreationSession(Player player) {
+        if (!creationSessions.containsKey(player))
+            return;
+        
+        creationSessions.get(player).remove();
+        
+        creationSessions.remove(player);
+    }
+    
+    public BlueprintCreationSession getCreationSession(Player player) {
+        return creationSessions.get(player);
+    }
+    
+    public List<InventoryLink> getInventoryLinks() {
+        return inventoryLinks;
+    }
+    
+    public void removeInventoryLink(Player player) {
+        inventoryLinks.removeIf(link -> link.getOwner().equals(player));
+    }
+    
+    public void addInventoryLink(InventoryLink link) {
+        inventoryLinks.add(link);
+    }
+    
+    public Optional<InventoryLink> getLink(Player player) {
+        return inventoryLinks.stream().filter(link -> link.getOwner().equals(player)).findFirst();
     }
     
     @Override

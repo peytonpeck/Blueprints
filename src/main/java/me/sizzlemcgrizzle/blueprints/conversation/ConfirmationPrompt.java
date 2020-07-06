@@ -1,12 +1,13 @@
 package me.sizzlemcgrizzle.blueprints.conversation;
 
-import me.sizzlemcgrizzle.blueprints.event.Blueprint;
+import com.sun.istack.internal.NotNull;
+import me.sizzlemcgrizzle.blueprints.BlueprintPlacementSession;
 import org.apache.commons.lang.ArrayUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.conversations.ConversationContext;
 import org.bukkit.conversations.Prompt;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import javax.annotation.Nullable;
 
 /*
  * Made by SydMontague:
@@ -14,59 +15,60 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ConfirmationPrompt extends NewPrompt {
     
-    private Blueprint blueprint;
+    private BlueprintPlacementSession blueprintPlacementSession;
     private String[] yes = new String[]{"yes", "1", "true", "y", "correct", "valid"};
     private String[] no = new String[]{"no", "0", "false", "n", "wrong", "invalid"};
     
-    public ConfirmationPrompt(Blueprint blueprint) {
+    public ConfirmationPrompt(BlueprintPlacementSession blueprintPlacementSession) {
         super(ChatColor.YELLOW + "Place blueprint?");
         
-        this.blueprint = blueprint;
+        this.blueprintPlacementSession = blueprintPlacementSession;
         
     }
     
     @Override
-    protected @Nullable Prompt acceptValidatedInput(@NotNull ConversationContext conversationContext, @NotNull String input) {
+    protected @Nullable
+    Prompt acceptValidatedInput(@NotNull ConversationContext conversationContext, @NotNull String input) {
         if (ArrayUtils.contains(yes, input.toLowerCase())) {
-            blueprint.complete();
-            blueprint = null;
+            blueprintPlacementSession.complete();
+            blueprintPlacementSession = null;
             return Prompt.END_OF_CONVERSATION;
             
             
         } else if (ArrayUtils.contains(no, input.toLowerCase())) {
-            blueprint.cancel();
-            blueprint = null;
+            blueprintPlacementSession.cancel();
+            blueprintPlacementSession = null;
             return Prompt.END_OF_CONVERSATION;
             
             
         } else if (input.equalsIgnoreCase("right")) {
-            blueprint.transform(1);
+            blueprintPlacementSession.transform(1);
             return this;
         } else if (input.equalsIgnoreCase("left")) {
-            blueprint.transform(-1);
+            blueprintPlacementSession.transform(-1);
             return this;
         } else if (input.equalsIgnoreCase("+x")) {
-            if (blueprint.setOrigin(1, 0, 0))
+            if (blueprintPlacementSession.setOrigin(1, 0, 0))
                 return Prompt.END_OF_CONVERSATION;
             return this;
         } else if (input.equalsIgnoreCase("-x")) {
-            if (blueprint.setOrigin(-1, 0, 0))
+            if (blueprintPlacementSession.setOrigin(-1, 0, 0))
                 return Prompt.END_OF_CONVERSATION;
             return this;
         } else if (input.equalsIgnoreCase("+y")) {
-            if (blueprint.setOrigin(0, 1, 0))
+            if (blueprintPlacementSession.setOrigin(0, 1, 0))
                 return Prompt.END_OF_CONVERSATION;
             return this;
         } else if (input.equalsIgnoreCase("-y")) {
-            if (blueprint.setOrigin(0, -1, 0))
+            if (blueprintPlacementSession.setOrigin(0, -1, 0))
                 return Prompt.END_OF_CONVERSATION;
             return this;
         } else if (input.equalsIgnoreCase("+z")) {
-            if (blueprint.setOrigin(0, 0, 1))
+            if (blueprintPlacementSession.setOrigin(0, 0, 1))
                 return Prompt.END_OF_CONVERSATION;
             return this;
         } else if (input.equalsIgnoreCase("-z")) {
-            if (blueprint.setOrigin(0, 0, -1))
+            if (blueprintPlacementSession.setOrigin(0, 0, -1))
                 return Prompt.END_OF_CONVERSATION;
             return this;
         }

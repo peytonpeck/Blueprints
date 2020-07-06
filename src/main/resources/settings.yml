@@ -8,6 +8,10 @@
 Play_Sounds: true
 Blueprint_Types:
   - NORMAL
+Player_Blueprint_Limits:
+  - blueprints.placement.5
+  - blueprints.placement.10
+  - blueprints.placement.-1
 Block:
   Bossbar_Duration: 60
   Show_Error_Preview: true
@@ -50,8 +54,6 @@ Block:
     - FERN
     - TORCH
     - DEAD_BUSH
-
-
 
 Messages:
   Message_Prefix: "&8[&3Blueprints&8] "

@@ -22,23 +22,28 @@ public class BlueprintsListCommand extends SimpleSubCommand {
     @Override
     protected void onCommand() {
         checkConsole();
-        if (args.length == 0)
-            args = new String[]{"1"};
-        int num = Integer.parseInt(args[0]);
+        int num = 1;
+        if (args.length > 0)
+            try {
+                num = Integer.parseInt(args[0]);
+            } catch (NumberFormatException e) {
+                tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must insert a number as an argument!");
+                return;
+            }
         
         HashMap<ItemStack, String> map = SchematicUtil.listBlueprints();
         
-        if (map == null) {
+        if (map.size() == 0) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cThere are currently no blueprints.");
             return;
         }
-        if (num == 0) {
+        if (num < 1 || num > Math.ceil(map.size() / 7.0)) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cThere are no blueprints on this page!");
             return;
         }
         
         int counter = 0;
-        tell(Settings.Messages.MESSAGE_PREFIX + "&6&m---&6&o Blueprint page " + num + "/" + (int) Math.ceil(map.size() / 7.0) + " &6&m---");
+        tell(Settings.Messages.MESSAGE_PREFIX + "&6&m---&6&o Blueprint page " + num + "/" + (int) Math.max(Math.ceil(map.size() / 7.0), 1) + " &6&m---");
         getPlayer().playSound(getPlayer().getLocation(), CompSound.NOTE_PLING.getSound(), 1F, 2F);
         for (Map.Entry<ItemStack, String> entry : map.entrySet()) {
             counter++;

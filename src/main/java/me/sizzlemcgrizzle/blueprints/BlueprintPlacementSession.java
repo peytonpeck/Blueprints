@@ -1,4 +1,4 @@
-package me.sizzlemcgrizzle.blueprints.event;
+package me.sizzlemcgrizzle.blueprints;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -24,9 +24,6 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import de.craftlancer.clclans.CLClans;
 import de.craftlancer.clclans.Clan;
-import me.ryanhamshire.GriefPrevention.Claim;
-import me.ryanhamshire.GriefPrevention.GriefPrevention;
-import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPostPasteEvent;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPrePasteEvent;
 import me.sizzlemcgrizzle.blueprints.conversation.ConfirmationPrompt;
@@ -65,9 +62,10 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
-public class Blueprint {
+public class BlueprintPlacementSession {
     private CLClans clans = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
     private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
     private BlueprintsPlugin blueprintsPlugin = BlueprintsPlugin.instance;
@@ -76,18 +74,17 @@ public class Blueprint {
     private static final String BLOCKS_IN_WAY_NO_PREVIEW = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_FALSE_MESSAGE;
     private static final String PLACEMENT_DENIED = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.PLACEMENT_DENIED;
     private static final String PLACEMENT_ACCEPTED = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BUILD_SUCCESS;
-    static final String IS_CONVERSING = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.IS_CONVERSING;
-    static final String INVALID_SCHEMATIC = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.INVALID_SCHEMATIC;
+    public static final String IS_CONVERSING = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.IS_CONVERSING;
+    public static final String INVALID_SCHEMATIC = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.INVALID_SCHEMATIC;
     
+    private Blueprint blueprint;
     private Player player;
     private Location location;
     private ItemStack item;
     private Block block;
     private World world;
-    private String schematic;
     private RegionContainer container;
     private RegionManager regions;
-    private Clipboard clipboard;
     private ClipboardHolder holder;
     private BossBar bossBar;
     private BukkitTask runnable;
@@ -106,20 +103,19 @@ public class Blueprint {
     
     private Conversation convo;
     
-    Blueprint(Player player, Location loc, ItemStack item, String schematic, Block block, World world, GameMode gameMode, String type, BlockFace originalDirection) {
+    public BlueprintPlacementSession(Blueprint blueprint, Player player, Location loc, ItemStack item, Block block, World world, GameMode gameMode, String type, BlockFace originalDirection) {
+        this.blueprint = blueprint;
         this.type = type;
         this.item = item;
         this.item.setAmount(1);
         this.player = player;
-        this.schematic = schematic;
         this.location = loc;
         this.block = block;
         this.world = world;
         this.inventory = player.getInventory();
         this.container = WorldGuard.getInstance().getPlatform().getRegionContainer();
         this.regions = container.get(new BukkitWorld(world));
-        this.clipboard = getClipboardFromSchematic();
-        this.holder = new ClipboardHolder(clipboard);
+        this.holder = blueprint.getHolder(player);
         this.bossBar = blueprintsPlugin.getBossBar();
         this.gameMode = gameMode;
         
@@ -150,7 +146,7 @@ public class Blueprint {
     /**
      * Starts the process. If something goes wrong, it will cancel and return true.
      */
-    void start() {
+    public void start() {
         
         counter -= rotationsFromNorth;
         holder.setTransform(new AffineTransform().rotateY(counter * 90));
@@ -191,7 +187,7 @@ public class Blueprint {
                     Location pasteLocation = new Location(world, location.getX(), location.getY(), location.getZ());
                     if ((!pasteLocation.getBlock().getType().isAir() && !Settings.Block.IGNORE_BLOCKS.contains(pasteLocation.getBlock().getType()))
                             || isInRegion(pasteLocation)
-                            || !isTrusted(pasteLocation))
+                            || !BlueprintsPlugin.isTrusted(player, pasteLocation))
                         errorBlockSet.add(pasteLocation);
                     return true;
                 }
@@ -292,7 +288,7 @@ public class Blueprint {
      */
     private Clipboard getClipboardFromSchematic() {
         Clipboard clipboard = null;
-        File file = new File(worldEditPlugin.getDataFolder().getAbsolutePath() + File.separator + "/schematics" + File.separator + "/" + schematic);
+        File file = new File(worldEditPlugin.getDataFolder().getAbsolutePath() + File.separator + "/schematics" + File.separator + "/" + blueprint.getSchematic());
         ClipboardFormat format = ClipboardFormats.findByFile(file);
         try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
             clipboard = reader.read();
@@ -310,7 +306,7 @@ public class Blueprint {
             
             
         } catch (IOException | WorldEditException e) {
-            Common.log(player.getName() + " tried to place a blueprint using " + schematic + ", however this schematic isn't valid!");
+            Common.log(player.getName() + " tried to place a blueprint using " + blueprint.getSchematic() + ", however this schematic isn't valid!");
         }
         return clipboard;
     }
@@ -318,7 +314,7 @@ public class Blueprint {
     /**
      * Checks if a location is in an admin claim
      */
-    boolean isInRegion(Location loc) {
+    public boolean isInRegion(Location loc) {
         if (player.isOp())
             return false;
         
@@ -340,19 +336,42 @@ public class Blueprint {
         //If there are still fake blocks, clear them.
         pasteBlockSet.forEach(loc -> player.sendBlockChange(loc, loc.getBlock().getBlockData()));
         
+        if (blueprint instanceof PlayerBlueprint) {
+            Optional<InventoryLink> optional = BlueprintsPlugin.instance.getLink(player);
+            
+            if (!optional.isPresent()) {
+                if (!gameMode.equals(GameMode.CREATIVE))
+                    player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
+                Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cYou must link chests to draw materials from! &4/playerblueprint link create");
+                if (Settings.PLAY_SOUNDS)
+                    player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+                return;
+            }
+            
+            if (!((PlayerBlueprint) blueprint).getMaterialMap().entrySet().stream().allMatch(entry -> optional.get().contains(entry.getKey(), entry.getValue()))) {
+                if (!gameMode.equals(GameMode.CREATIVE))
+                    player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
+                Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cThe chests you have linked do not contain the materials needed!");
+                if (Settings.PLAY_SOUNDS)
+                    player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+                return;
+            }
+            
+            ((PlayerBlueprint) blueprint).getMaterialMap().forEach((k, v) -> optional.get().take(k, v));
+        }
         //If cancelled, the placement will be cancelled.
-        BlueprintPrePasteEvent event = new BlueprintPrePasteEvent(type, player, schematic, gameMode, item, location);
+        BlueprintPrePasteEvent event = new BlueprintPrePasteEvent(type, player, blueprint.getSchematic(), gameMode, item, location);
         Common.callEvent(event);
         
         if (event.isCancelled()) {
             if (!gameMode.equals(GameMode.CREATIVE))
                 player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
-            Logs.addToLogs(player, location, schematic, "cancelled by event");
+            Logs.addToLogs(player, location, blueprint.getSchematic(), "cancelled by event");
         } else {
             
             pasteAndGetPasteBlocks();
             
-            Logs.addToLogs(player, location, schematic, "confirmed");
+            Logs.addToLogs(player, location, blueprint.getSchematic(), "confirmed");
             
             if (Settings.PLAY_SOUNDS)
                 player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
@@ -361,25 +380,8 @@ public class Blueprint {
                 new AdjustBannerRunnable(player, clans, bannerSet).runTaskLater(SimplePlugin.getInstance(), 5);
             
             Common.tell(player, PLACEMENT_ACCEPTED);
-            Common.callEvent(new BlueprintPostPasteEvent(type, player, schematic, gameMode, item, location, pasteSet));
+            Common.callEvent(new BlueprintPostPasteEvent(type, player, blueprint.getSchematic(), gameMode, item, location, pasteSet));
         }
-    }
-    
-    /**
-     * Sees if a player is trusted at a given location.
-     */
-    private boolean isTrusted(Location loc) {
-        if (!GriefPrevention.instance.isEnabled())
-            return true;
-        
-        Claim claim = null;
-        for (Claim c : GriefPrevention.instance.dataStore.getClaims())
-            if (c.contains(loc, true, false))
-                claim = c;
-        
-        return claim == null
-                || claim.getOwnerName().equals(player.getName())
-                || claim.allowBuild(player, loc.getBlock().getType()) == null;
     }
     
     /**
@@ -449,7 +451,7 @@ public class Blueprint {
                     if (!conversationAbandonedEvent.gracefulExit()) {
                         
                         Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&eYour placement has been cancelled.");
-                        Logs.addToLogs(player, block.getLocation(), schematic, "abandoned");
+                        Logs.addToLogs(player, block.getLocation(), blueprint.getSchematic(), "abandoned");
                         
                         if (inventory.firstEmpty() == -1)
                             world.dropItemNaturally(player.getLocation(), item);
@@ -483,9 +485,9 @@ public class Blueprint {
     }
     
     private static class AdjustBannerRunnable extends BukkitRunnable {
-        Set<Location> bannerSet;
-        CLClans clans;
-        Player player;
+        private Set<Location> bannerSet;
+        private CLClans clans;
+        private Player player;
         
         
         AdjustBannerRunnable(Player player, CLClans clans, Set<Location> bannerSet) {
@@ -574,7 +576,7 @@ public class Blueprint {
         return location;
     }
     
-    public Clipboard getClipboard() {
-        return clipboard;
+    public Blueprint getBlueprint() {
+        return blueprint;
     }
 }

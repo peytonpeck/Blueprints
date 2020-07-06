@@ -6,8 +6,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -35,7 +35,8 @@ public class BlueprintPostPasteEvent extends Event {
     }
     
     @Override
-    public @NotNull HandlerList getHandlers() {
+    public @Nonnull
+    HandlerList getHandlers() {
         return handlers;
     }
     

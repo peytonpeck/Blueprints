@@ -1,14 +1,16 @@
 package me.sizzlemcgrizzle.blueprints.conversation;
 
+import com.sun.istack.internal.NotNull;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import org.apache.commons.lang.ArrayUtils;
 import org.bukkit.conversations.ConversationContext;
 import org.bukkit.conversations.FixedSetPrompt;
 import org.bukkit.conversations.Prompt;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.mineacademy.fo.model.SimpleComponent;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class NewPrompt extends FixedSetPrompt {
     protected final BaseComponent promptText;
@@ -46,7 +48,7 @@ public class NewPrompt extends FixedSetPrompt {
     }
     
     @Override
-    protected boolean isInputValid(@NotNull ConversationContext context, @NotNull String input) {
+    protected boolean isInputValid(@Nonnull ConversationContext context, @Nonnull String input) {
         String[] accepted = new String[]{"true", "false", "on", "off", "yes", "no", "y", "n", "1", "0",
                 "right", "wrong", "correct", "incorrect", "valid", "invalid", "right", "left",
                 "+x", "-x", "+y", "-y", "+z", "-z"};
@@ -54,7 +56,8 @@ public class NewPrompt extends FixedSetPrompt {
     }
     
     @Override
-    protected @Nullable Prompt acceptValidatedInput(@NotNull ConversationContext conversationContext, @NotNull String s) {
+    protected @Nullable
+    Prompt acceptValidatedInput(@Nonnull ConversationContext conversationContext, @Nonnull String s) {
         return this.acceptValidatedInput(conversationContext, s);
     }
 }
