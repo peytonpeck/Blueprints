@@ -6,6 +6,7 @@ import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandGroup;
 import me.sizzlemcgrizzle.blueprints.command.PlayerBlueprintCommandGroup;
 import me.sizzlemcgrizzle.blueprints.event.BlueprintListener;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -16,6 +17,7 @@ import org.bukkit.boss.BossBar;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.FileUtil;
 import org.mineacademy.fo.plugin.SimplePlugin;
@@ -34,15 +36,16 @@ import java.util.stream.Collectors;
 
 public class BlueprintsPlugin extends SimplePlugin {
     
+    public static File BLUEPRINTS_FILE;
+    public static BlueprintsPlugin instance;
+    private static Economy econ = null;
+    
     private BossBar bossBar;
     
     private List<Blueprint> blueprints;
     private List<InventoryLink> inventoryLinks;
     
     private Map<Player, BlueprintCreationSession> creationSessions = new HashMap<>();
-    
-    public static File BLUEPRINTS_FILE;
-    public static BlueprintsPlugin instance;
     
     @Override
     public void onPluginStart() {
@@ -52,6 +55,10 @@ public class BlueprintsPlugin extends SimplePlugin {
         
         ConfigurationSerialization.registerClass(Blueprint.class);
         ConfigurationSerialization.registerClass(PlayerBlueprint.class);
+        
+        if (Settings.USE_ECONOMY)
+            setupEconomy();
+        
         loadBlueprints();
         
         registerEvents(new BlueprintListener());
@@ -75,6 +82,15 @@ public class BlueprintsPlugin extends SimplePlugin {
         saveBlueprints();
     }
     
+    @Override
+    protected void onPluginReload() {
+        instance = this;
+    }
+    
+    public static Economy getEconomy() {
+        return econ;
+    }
+    
     public static boolean isTrusted(Player player, Location loc) {
         if (!GriefPrevention.instance.isEnabled())
             return true;
@@ -87,6 +103,18 @@ public class BlueprintsPlugin extends SimplePlugin {
         return claim == null
                 || claim.getOwnerName().equals(player.getName())
                 || claim.allowBuild(player, loc.getBlock().getType()) == null;
+    }
+    
+    private boolean setupEconomy() {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            return false;
+        }
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp == null) {
+            return false;
+        }
+        econ = rsp.getProvider();
+        return econ != null;
     }
     
     private void loadBlueprints() {

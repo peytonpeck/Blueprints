@@ -1,5 +1,6 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
+import me.sizzlemcgrizzle.blueprints.BlueprintCreationSession;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.PlayerBlueprint;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
@@ -15,6 +16,8 @@ public class PlayerBlueprintCompleteCommand extends SimpleSubCommand {
     protected PlayerBlueprintCompleteCommand(SimpleCommandGroup parent) {
         super(parent, "complete");
         setPermission("blueprints.create");
+        setDescription("Completes the blueprint creation session");
+        setUsage("<name>");
     }
     
     @Override
@@ -39,19 +42,27 @@ public class PlayerBlueprintCompleteCommand extends SimpleSubCommand {
             return;
         }
         
+        BlueprintCreationSession session = BlueprintsPlugin.instance.getCreationSession(player);
+        
+        int area = (int) session.getArea();
+        if (area > Settings.PLAYER_BLUEPRINT_MAX_SIZE) {
+            tell(Settings.Messages.MESSAGE_PREFIX + "&cThe size of this blueprint is too big! Your size: &6" + area + "&c, maximum size: &a" + Settings.PLAYER_BLUEPRINT_MAX_SIZE + "&c.");
+            return;
+        }
+        
         if (args.length < 1) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cPlease enter the name of the blueprint (color codes are acceptable!)");
             return;
         }
         
-        if (BlueprintsPlugin.instance.getPlayerBlueprints().stream().filter(b -> b.getOwner().equals(player.getUniqueId())).anyMatch(b -> b.getSchematic().contains(args[0]))) {
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cYou already have a blueprint named " + args[0] + "!");
+        player.removeMetadata("blueprint_create", BlueprintsPlugin.instance);
+        
+        if (session.getPosition1().getWorld() != session.getPosition2().getWorld()) {
+            tell(Settings.Messages.MESSAGE_PREFIX + "&cThe two positions are not in the same world!");
             return;
         }
         
-        player.removeMetadata("blueprint_create", BlueprintsPlugin.instance);
-        
-        BlueprintsPlugin.instance.getCreationSession(player).complete(args[0]);
+        session.complete(args[0]);
         tell(Settings.Messages.MESSAGE_PREFIX + "&eBlueprint creation session completed.");
     }
 }

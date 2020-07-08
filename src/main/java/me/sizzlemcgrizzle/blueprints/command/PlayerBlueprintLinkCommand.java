@@ -4,8 +4,10 @@ import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.InventoryLink;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.Material;
+import org.bukkit.block.Barrel;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
+import org.bukkit.block.ShulkerBox;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.mineacademy.fo.command.SimpleCommandGroup;
@@ -55,19 +57,19 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
         }
         
         BlueprintsPlugin.instance.addInventoryLink(new InventoryLink(player));
-        tell(Settings.Messages.MESSAGE_PREFIX + "&aInventory link successfully created. &3/playerblueprint link add &awhile looking at a chest!");
+        tell(Settings.Messages.MESSAGE_PREFIX + "&aInventory link successfully created. &3/playerblueprint link add &awhile looking at a barrel or shulker box!!");
     }
     
     private void add(Player player) {
         Block block = player.getTargetBlockExact(5);
         
-        if (block == null || (block.getType() != Material.CHEST && block.getType() != Material.TRAPPED_CHEST)) {
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must look at a chest or trapped chest!");
+        if (block == null || (block.getType() != Material.BARREL && block.getType() != Material.SHULKER_BOX)) {
+            tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must look at a barrel or a shulker box!");
             return;
         }
         
         if (!BlueprintsPlugin.isTrusted(player, block.getLocation())) {
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cYou are not trusted at this chest!");
+            tell(Settings.Messages.MESSAGE_PREFIX + "&cYou are not trusted here!");
             return;
         }
         
@@ -77,7 +79,11 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
         }
         
         InventoryLink link = BlueprintsPlugin.instance.getLink(player).get();
-        Inventory inventory = ((Chest) block.getState()).getInventory();
+        Inventory inventory;
+        if (block.getType() == Material.SHULKER_BOX)
+            inventory = ((ShulkerBox) block.getState()).getInventory();
+        else
+            inventory = ((Barrel) block.getState()).getInventory();
         
         if (!link.add(inventory))
             tell(Settings.Messages.MESSAGE_PREFIX + "&cThis chest is already linked! &4/playerblueprint link remove");
@@ -88,8 +94,8 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
     private void remove(Player player) {
         Block block = player.getTargetBlockExact(5);
         
-        if (block == null || (block.getType() != Material.CHEST && block.getType() != Material.TRAPPED_CHEST)) {
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must look at a chest or trapped chest!");
+        if (block == null || (block.getType() != Material.BARREL && block.getType() != Material.SHULKER_BOX)) {
+            tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must look at a barrel or shulker box!");
             return;
         }
         
@@ -102,7 +108,7 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
         Inventory inventory = ((Chest) block.getState()).getInventory();
         
         if (!link.remove(inventory))
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cThis chest is not linked.");
+            tell(Settings.Messages.MESSAGE_PREFIX + "&cThis barrel/shulker box is not linked.");
         else
             tell(Settings.Messages.MESSAGE_PREFIX + "&aSuccessfully unlinked inventory!");
     }

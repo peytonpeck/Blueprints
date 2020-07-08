@@ -11,24 +11,31 @@ import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
+import com.sk89q.worldedit.world.block.BlockTypes;
 import de.craftlancer.core.Utils;
 import de.craftlancer.core.util.ParticleUtil;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
+import me.sizzlemcgrizzle.blueprints.util.MaterialUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.BoundingBox;
 import org.mineacademy.fo.Common;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class BlueprintCreationSession {
     private Location position1;
@@ -43,22 +50,45 @@ public class BlueprintCreationSession {
     }
     
     public void complete(String name) {
+        
+        Map<Material, Integer> materialMap = new HashMap<>();
+        BoundingBox box = new BoundingBox(position1.getX(), position1.getY(), position1.getZ(), position2.getX(), position2.getY(), position2.getZ());
+        
+        for (double x = box.getMinX(); x <= box.getMaxX(); x++)
+            for (double y = box.getMinY(); y <= box.getMaxY(); y++)
+                for (double z = box.getMinZ(); z <= box.getMaxZ(); z++) {
+                    Material material = (new Location(position1.getWorld(), x, y, z)).getBlock().getType();
+                    if (material == Material.AIR || material == Material.WATER || material == Material.LAVA)
+                        continue;
+                    if (material.name().contains("WALL"))
+                        material = MaterialUtil.replaceWallMaterial(material);
+                    materialMap.compute(material, (k, v) -> materialMap.containsKey(k) ? materialMap.get(k) + 1 : 1);
+                }
+        
         CuboidRegion region = new CuboidRegion(BukkitAdapter.adapt(position1.getWorld()),
                 BlockVector3.at(position1.getX(), position1.getY(), position1.getZ()),
                 BlockVector3.at(position2.getX(), position2.getY(), position2.getZ()));
         BlockArrayClipboard clipboard = new BlockArrayClipboard(region);
         
         try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(BukkitAdapter.adapt(position1.getWorld()), -1)) {
+            
             ForwardExtentCopy forwardExtentCopy = new ForwardExtentCopy(
                     editSession, region, clipboard, region.getMinimumPoint()
             );
             
             Operations.complete(forwardExtentCopy);
+            
+            for (BlockVector3 blockVector3 : clipboard.getRegion()) {
+                Material material = BukkitAdapter.adapt(clipboard.getBlock(blockVector3).getBlockType());
+                if (material == Material.WATER || material == Material.LAVA)
+                    clipboard.setBlock(blockVector3, BlockTypes.AIR.getDefaultState());
+            }
+            
         } catch (WorldEditException e) {
             e.printStackTrace();
         }
         
-        String schematic = owner.getUniqueId() + name + ".schem";
+        String schematic = UUID.randomUUID().toString() + ".schem";
         List<String> lore = Arrays.asList(
                 ChatColor.GRAY + "Place this block to spawn the building.",
                 ChatColor.GRAY + "Link chests to draw blocks from using",
@@ -72,6 +102,10 @@ public class BlueprintCreationSession {
                 ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "Player Blueprint: " +
                         ChatColor.WHITE + (owner.hasPermission("blueprints.create.color") ? ChatColor.translateAlternateColorCodes('&', name) : name),
                 lore);
+        
+        ItemMeta meta = item.getItemMeta();
+        meta.setCustomModelData(4);
+        item.setItemMeta(meta);
         
         File file = new File(BlueprintsPlugin.instance.getDataFolder() + File.separator + "/playerblueprints" + File.separator + "/" + schematic);
         
@@ -88,7 +122,7 @@ public class BlueprintCreationSession {
             e.printStackTrace();
         }
         
-        BlueprintsPlugin.instance.addBlueprint(new PlayerBlueprint(item, schematic, "NORMAL", owner.getUniqueId()));
+        BlueprintsPlugin.instance.addBlueprint(new PlayerBlueprint(item, schematic, "NORMAL", owner.getUniqueId(), materialMap));
         
         BlueprintsPlugin.instance.removeCreationSession(owner);
     }
@@ -116,8 +150,27 @@ public class BlueprintCreationSession {
         spawnParticles();
     }
     
+    public Location getPosition1() {
+        return position1;
+    }
+    
+    public Location getPosition2() {
+        return position2;
+    }
+    
     public Player getPlayer() {
         return owner;
+    }
+    
+    public double getArea() {
+        double minX = Math.min(position1.getX(), position2.getX());
+        double minY = Math.min(position1.getY(), position2.getY());
+        double minZ = Math.min(position1.getZ(), position2.getZ());
+        double maxX = Math.max(position1.getX(), position2.getX()) + 1;
+        double maxY = Math.max(position1.getY(), position2.getY()) + 1;
+        double maxZ = Math.max(position1.getZ(), position2.getZ()) + 1;
+        
+        return (maxX - minX) * (maxY - minY) * (maxZ - minZ);
     }
     
     private void spawnParticles() {
@@ -139,6 +192,9 @@ public class BlueprintCreationSession {
             pos1 = position1;
             pos2 = position2;
         }
+        
+        if (pos1.getWorld() != pos2.getWorld())
+            return;
         
         this.runnable = new BukkitRunnable() {
             @Override

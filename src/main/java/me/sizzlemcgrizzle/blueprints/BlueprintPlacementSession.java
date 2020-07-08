@@ -149,7 +149,8 @@ public class BlueprintPlacementSession {
     public void start() {
         
         counter -= rotationsFromNorth;
-        holder.setTransform(new AffineTransform().rotateY(counter * 90));
+        if (!(blueprint instanceof PlayerBlueprint))
+            holder.setTransform(new AffineTransform().rotateY(counter * 90));
         
         getBlocksInWay();
         
@@ -553,6 +554,10 @@ public class BlueprintPlacementSession {
                     .copyEntities(false)
                     .ignoreAirBlocks(true)
                     .build();
+            
+            if (blueprint instanceof PlayerBlueprint)
+                editSession.getSurvivalExtent().setStripNbt(true);
+            
             Operations.complete(previewOperation);
             Operation operation = holder
                     .createPaste(editSession)

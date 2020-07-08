@@ -29,13 +29,22 @@ public class Settings extends SimpleSettings {
     public static Boolean PLAY_SOUNDS;
     public static List<String> TYPES;
     public static List<String> LIMITS;
+    public static Integer PLAYER_BLUEPRINT_MAX_SIZE;
+    public static Boolean USE_ECONOMY;
+    public static Double PLAYER_BLUEPRINT_PRICE_MODIFIER;
     
     private static void init() {
         pathPrefix(null);
         PLAY_SOUNDS = getBoolean("Play_Sounds");
         TYPES = getStringList("Blueprint_Types");
         LIMITS = getStringList("Player_Blueprint_Limits");
-        LIMITS.forEach(limit -> Bukkit.getPluginManager().addPermission(new Permission(limit)));
+        LIMITS.forEach(limit -> {
+            if (Bukkit.getPluginManager().getPermission(limit) == null)
+                Bukkit.getPluginManager().addPermission(new Permission(limit));
+        });
+        PLAYER_BLUEPRINT_MAX_SIZE = getInteger("Player_Blueprint_Max_Size");
+        USE_ECONOMY = getBoolean("Use_Economy");
+        PLAYER_BLUEPRINT_PRICE_MODIFIER = getDouble("Player_Blueprint_Price_Multiplier");
     }
     
     public static class Messages {

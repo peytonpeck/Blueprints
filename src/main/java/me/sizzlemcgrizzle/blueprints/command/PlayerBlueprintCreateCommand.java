@@ -13,6 +13,7 @@ public class PlayerBlueprintCreateCommand extends SimpleSubCommand {
     protected PlayerBlueprintCreateCommand(SimpleCommandGroup parent) {
         super(parent, "create");
         setPermission("blueprints.create");
+        setDescription("Makes a new blueprint creation session to make a blueprint with");
     }
     
     @Override
@@ -26,7 +27,7 @@ public class PlayerBlueprintCreateCommand extends SimpleSubCommand {
         }
         
         player.setMetadata("blueprint_create", new FixedMetadataValue(BlueprintsPlugin.instance, true));
-        tell(Settings.Messages.MESSAGE_PREFIX + "&aPlace two blocks. Left click a block with no item in hand to set position 1, right click the other block to set position 2. When done, type &2/blueprints complete&a.");
+        tell(Settings.Messages.MESSAGE_PREFIX + "&aPlace two blocks. Left click a block with no item in hand to set position 1, right click the other block to set position 2. When done, type &2/blueprint complete&a.");
         
         BlueprintsPlugin.instance.addCreationSession(player, new BlueprintCreationSession(player));
     }

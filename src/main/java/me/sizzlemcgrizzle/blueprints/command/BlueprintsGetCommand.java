@@ -2,6 +2,7 @@ package me.sizzlemcgrizzle.blueprints.command;
 
 import me.sizzlemcgrizzle.blueprints.Blueprint;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
+import me.sizzlemcgrizzle.blueprints.PlayerBlueprint;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.inventory.ItemStack;
 import org.mineacademy.fo.command.SimpleCommandGroup;
@@ -23,7 +24,7 @@ public class BlueprintsGetCommand extends SimpleSubCommand {
     @Override
     protected List<String> tabComplete() {
         if (args.length == 1)
-            return completeLastWord(BlueprintsPlugin.instance.getBlueprints().stream().map(Blueprint::getSchematic).collect(Collectors.toList()));
+            return completeLastWord(BlueprintsPlugin.instance.getBlueprints().stream().filter(blueprint -> !(blueprint instanceof PlayerBlueprint)).map(Blueprint::getSchematic).collect(Collectors.toList()));
         return new ArrayList<>();
     }
     

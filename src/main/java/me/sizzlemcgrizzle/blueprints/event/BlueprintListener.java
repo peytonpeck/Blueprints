@@ -11,9 +11,10 @@ import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Barrel;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Chest;
+import org.bukkit.block.ShulkerBox;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -24,6 +25,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.remain.CompSound;
@@ -152,7 +154,7 @@ public class BlueprintListener implements Listener {
         Block block = event.getBlock();
         Player player = event.getPlayer();
         
-        if (block.getType() != Material.CHEST && block.getType() != Material.TRAPPED_CHEST)
+        if (block.getType() != Material.BARREL && block.getType() != Material.SHULKER_BOX)
             return;
         
         Optional<InventoryLink> optional = BlueprintsPlugin.instance.getLink(player);
@@ -160,7 +162,13 @@ public class BlueprintListener implements Listener {
         if (!optional.isPresent())
             return;
         
-        optional.get().remove(((Chest) block.getState()).getInventory());
+        Inventory inventory;
+        if (block.getType() == Material.SHULKER_BOX)
+            inventory = ((ShulkerBox) block.getState()).getInventory();
+        else
+            inventory = ((Barrel) block.getState()).getInventory();
+        
+        optional.get().remove(inventory);
     }
     
 }

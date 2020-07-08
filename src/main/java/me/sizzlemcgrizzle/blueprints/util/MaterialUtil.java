@@ -117,4 +117,21 @@ public class MaterialUtil {
         }
     }
     
+    public static Material replaceWallMaterial(Material material) {
+        if (material.name().contains("_WALL_BANNER")
+                || material.name().contains("_WALL_SIGN")
+                || material.name().contains("_WALL_HEAD")
+                || material.name().contains("_WALL_SKULL")
+                || material.name().contains("_WALL_FAN"))
+            return Material.valueOf(material.name().replace("_WALL", ""));
+        switch (material) {
+            case WALL_TORCH:
+                return Material.TORCH;
+            case REDSTONE_WALL_TORCH:
+                return Material.REDSTONE_TORCH;
+            default:
+                return material;
+        }
+    }
+    
 }

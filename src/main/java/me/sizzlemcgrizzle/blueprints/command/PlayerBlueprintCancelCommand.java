@@ -11,6 +11,7 @@ public class PlayerBlueprintCancelCommand extends SimpleSubCommand {
     protected PlayerBlueprintCancelCommand(SimpleCommandGroup parent) {
         super(parent, "cancel");
         setPermission("blueprints.create");
+        setDescription("Cancels the blueprint creation session");
     }
     
     @Override

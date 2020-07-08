@@ -12,6 +12,10 @@ Player_Blueprint_Limits:
   - blueprints.placement.5
   - blueprints.placement.10
   - blueprints.placement.-1
+Player_Blueprint_Max_Size: 32768
+Use_Economy: true
+Player_Blueprint_Price_Multiplier: 0.5
+
 Block:
   Bossbar_Duration: 60
   Show_Error_Preview: true

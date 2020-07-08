@@ -1,16 +1,11 @@
 package me.sizzlemcgrizzle.blueprints;
 
-import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.DoubleChest;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class InventoryLink {
@@ -24,6 +19,7 @@ public class InventoryLink {
     }
     
     public void take(Material material, int amount) {
+        inventories.removeIf(inventory -> inventory.getLocation().getBlock().getType() != Material.SHULKER_BOX && inventory.getLocation().getBlock().getType() != Material.BARREL);
         for (Inventory inventory : inventories) {
             for (int i = 0; i < inventory.getSize(); i++) {
                 ItemStack item = inventory.getItem(i);
@@ -43,6 +39,7 @@ public class InventoryLink {
     }
     
     public boolean contains(Material material, int amount) {
+        inventories.removeIf(inventory -> inventory.getLocation().getBlock().getType() != Material.SHULKER_BOX && inventory.getLocation().getBlock().getType() != Material.BARREL);
         for (Inventory inventory : inventories) {
             for (ItemStack item : inventory.getContents()) {
                 if (item == null)
@@ -58,10 +55,10 @@ public class InventoryLink {
     
     /**
      * @param inventory the inventory being added
-     * @return true if the inventory isn't present and is added
+     * @return true if the inventory isn't present and is successfully added
      */
     public boolean add(Inventory inventory) {
-        if (inventories.stream().noneMatch(i -> getChestLocations(i.getHolder()).contains(inventory.getLocation()))) {
+        if (inventories.stream().noneMatch(i -> i.getLocation().equals(inventory.getLocation()))) {
             inventories.add(inventory);
             return true;
         } else
@@ -70,10 +67,10 @@ public class InventoryLink {
     
     /**
      * @param inventory the inventory being removed
-     * @return true if the inventory is present and removed
+     * @return true if the inventory is present and successfully removed
      */
     public boolean remove(Inventory inventory) {
-        if (inventories.stream().anyMatch(i -> getChestLocations(i.getHolder()).contains(inventory.getLocation()))) {
+        if (inventories.stream().anyMatch(i -> i.getLocation().equals(inventory.getLocation()))) {
             inventories.remove(getInventory(inventory));
             return true;
         } else
@@ -89,14 +86,6 @@ public class InventoryLink {
     }
     
     private Inventory getInventory(Inventory inventory) {
-        return inventories.stream().filter(inventory1 -> getChestLocations(inventory1.getHolder()).contains(inventory.getLocation())).findFirst().get();
-    }
-    
-    private List<Location> getChestLocations(InventoryHolder holder) {
-        if (holder instanceof DoubleChest) {
-            DoubleChest doubleChest = ((DoubleChest) holder);
-            return Arrays.asList(doubleChest.getLeftSide().getInventory().getLocation(), doubleChest.getRightSide().getInventory().getLocation());
-        } else
-            return Collections.singletonList(holder.getInventory().getLocation());
+        return inventories.stream().filter(inventory1 -> inventory.getLocation().equals(inventory1.getLocation())).findFirst().get();
     }
 }
