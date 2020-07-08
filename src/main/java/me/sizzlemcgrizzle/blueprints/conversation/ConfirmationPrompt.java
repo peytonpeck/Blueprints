@@ -1,12 +1,12 @@
 package me.sizzlemcgrizzle.blueprints.conversation;
 
-import com.sun.istack.internal.NotNull;
 import me.sizzlemcgrizzle.blueprints.BlueprintPlacementSession;
 import org.apache.commons.lang.ArrayUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.conversations.ConversationContext;
 import org.bukkit.conversations.Prompt;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /*
@@ -28,7 +28,7 @@ public class ConfirmationPrompt extends NewPrompt {
     
     @Override
     protected @Nullable
-    Prompt acceptValidatedInput(@NotNull ConversationContext conversationContext, @NotNull String input) {
+    Prompt acceptValidatedInput(@Nonnull ConversationContext conversationContext, @Nonnull String input) {
         if (ArrayUtils.contains(yes, input.toLowerCase())) {
             blueprintPlacementSession.complete();
             blueprintPlacementSession = null;

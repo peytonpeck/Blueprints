@@ -1,6 +1,5 @@
 package me.sizzlemcgrizzle.blueprints.conversation;
 
-import com.sun.istack.internal.NotNull;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import org.apache.commons.lang.ArrayUtils;
@@ -41,7 +40,7 @@ public class NewPrompt extends FixedSetPrompt {
                 .build();
     }
     
-    @NotNull
+    @Nonnull
     @Override
     public String getPromptText(ConversationContext context) {
         return ComponentSerializer.toString(promptText);

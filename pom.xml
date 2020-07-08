@@ -13,7 +13,7 @@
 
         <main.class>me.sizzlemcgrizzle.blueprints.BlueprintsPlugin</main.class>
 
-        <foundation.version>5.3.6</foundation.version>
+        <foundation.version>5.4.4-SNAPSHOT</foundation.version>
 
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -21,7 +21,7 @@
     <repositories>
         <repository>
             <id>spigotmc-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
         <repository>
             <id>jitpack.io</id>
@@ -51,8 +51,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.kangarko</groupId>
-            <artifactId>Foundation</artifactId>
+            <groupId>org.mineacademy.libraries</groupId>
+            <artifactId>foundation</artifactId>
             <version>${foundation.version}</version>
 
             <scope>compile</scope>
@@ -120,7 +120,7 @@
                             <artifactSet>
                                 <includes>
                                     <include>org.mineacademy:Game*</include>
-                                    <include>com.github.kangarko:Foundation*</include>
+                                    <include>org.mineacademy.libraries:foundation*</include>
                                 </includes>
                                 <excludes>
                                     <exclude>org.mineacademy:GameAPI*</exclude>
