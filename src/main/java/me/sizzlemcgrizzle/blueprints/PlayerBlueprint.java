@@ -10,7 +10,6 @@ import de.craftlancer.core.gui.GUIInventory;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintListGUI;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import net.md_5.bungee.api.ChatColor;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -114,12 +113,13 @@ public class PlayerBlueprint extends Blueprint {
         inventory.setItem(49, getQuestionMarkItem());
         
         inventory.setItem(53, Utils.buildItemStack(Material.ENDER_EYE, ChatColor.GOLD + "Back to Main Page", Collections.emptyList()));
-        inventory.setClickAction(53, () -> new PlayerBlueprintListGUI(Bukkit.getPlayer(owner)).display(Bukkit.getPlayer(owner)));
     }
     
     public void display(Player player) {
         if (inventory == null)
             createInventory();
+        
+        inventory.setClickAction(53, () -> new PlayerBlueprintListGUI(player).display(player));
         
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5F, 2F);
         player.openInventory(inventory.getInventory());

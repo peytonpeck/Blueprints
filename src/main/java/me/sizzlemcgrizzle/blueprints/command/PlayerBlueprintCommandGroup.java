@@ -10,6 +10,7 @@ public class PlayerBlueprintCommandGroup extends SimpleCommandGroup {
         registerSubcommand(new PlayerBlueprintCreateCommand(this));
         registerSubcommand(new PlayerBlueprintListCommand(this));
         registerSubcommand(new PlayerBlueprintLinkCommand(this));
+        registerSubcommand(new PlayerBlueprintMaterialCommand(this));
     }
     
     @Override

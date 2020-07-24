@@ -31,7 +31,7 @@
     <target name="Build">
         <jar jarfile="${serverPath}\plugins\${ant.project.name}.jar" basedir="./target/classes/" includes="**/*">
             <zipgroupfileset
-                    dir="${user.home}\.m2\repository\org\mineacademy\libraries\Foundation\${foundation.version}/"
+                    dir="${user.home}\.m2\repository\org\mineacademy\libraries\Foundation\${foundation.version}\"
                     includes="**/*${foundation.version}.jar"/>
         </jar>
     </target>

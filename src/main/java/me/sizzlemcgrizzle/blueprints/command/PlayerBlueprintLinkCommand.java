@@ -57,13 +57,13 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
         }
         
         BlueprintsPlugin.instance.addInventoryLink(new InventoryLink(player));
-        tell(Settings.Messages.MESSAGE_PREFIX + "&aInventory link successfully created. &3/playerblueprint link add &awhile looking at a barrel or shulker box!!");
+        tell(Settings.Messages.MESSAGE_PREFIX + "&aInventory link successfully created. &3/playerblueprint link add &awhile looking at a barrel or shulker box!");
     }
     
     private void add(Player player) {
         Block block = player.getTargetBlockExact(5);
         
-        if (block == null || (block.getType() != Material.BARREL && block.getType() != Material.SHULKER_BOX)) {
+        if (block == null || (block.getType() != Material.BARREL && !block.getType().name().contains("SHULKER_BOX"))) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must look at a barrel or a shulker box!");
             return;
         }
@@ -73,6 +73,12 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
             return;
         }
         
+        if (BlueprintsPlugin.isInRegion(player, block.getLocation())) {
+            tell(Settings.Messages.MESSAGE_PREFIX + "&cYou cannot add a link in an admin claim!");
+            return;
+        }
+        
+        
         if (!BlueprintsPlugin.instance.getLink(player).isPresent()) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must first create a link! &4/playerblueprint link create");
             return;
@@ -80,7 +86,7 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
         
         InventoryLink link = BlueprintsPlugin.instance.getLink(player).get();
         Inventory inventory;
-        if (block.getType() == Material.SHULKER_BOX)
+        if (block.getType().name().contains("SHULKER_BOX"))
             inventory = ((ShulkerBox) block.getState()).getInventory();
         else
             inventory = ((Barrel) block.getState()).getInventory();
@@ -94,7 +100,7 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
     private void remove(Player player) {
         Block block = player.getTargetBlockExact(5);
         
-        if (block == null || (block.getType() != Material.BARREL && block.getType() != Material.SHULKER_BOX)) {
+        if (block == null || (block.getType() != Material.BARREL && !block.getType().name().contains("SHULKER_BOX"))) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must look at a barrel or shulker box!");
             return;
         }

@@ -57,6 +57,16 @@ public class BlueprintListener implements Listener {
             return;
         }
         
+        if (!BlueprintsPlugin.isTrusted(player, event.getClickedBlock().getLocation())) {
+            Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cYou are not trusted here.");
+            return;
+        }
+        
+        if (BlueprintsPlugin.isInRegion(player, event.getClickedBlock().getLocation())) {
+            Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cYou cannot do this in an admin claim!");
+            return;
+        }
+        
         BlueprintCreationSession session = BlueprintsPlugin.instance.getCreationSession(player);
         
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK)
@@ -112,7 +122,12 @@ public class BlueprintListener implements Listener {
             return true;
         }
         
-        return blueprintPlacementSession.isInRegion(blueprintPlacementSession.getLocation());
+        boolean bool = BlueprintsPlugin.isInRegion(player, blueprintPlacementSession.getLocation());
+        
+        if (bool)
+            Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cYou cannot place a blueprint anywhere in an admin claim!");
+        
+        return bool;
     }
     
     @EventHandler(ignoreCancelled = true)

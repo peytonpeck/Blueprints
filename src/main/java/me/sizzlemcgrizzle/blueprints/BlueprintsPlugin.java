@@ -1,5 +1,11 @@
 package me.sizzlemcgrizzle.blueprints;
 
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandGroup;
@@ -89,6 +95,21 @@ public class BlueprintsPlugin extends SimplePlugin {
     
     public static Economy getEconomy() {
         return econ;
+    }
+    
+    public static boolean isInRegion(Player player, Location loc) {
+        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionManager regions = container.get(BukkitAdapter.adapt(loc.getWorld()));
+        
+        if (player.isOp())
+            return false;
+        
+        if (WorldGuard.getInstance() != null && regions != null && !player.isOp()) {
+            BlockVector3 position = BlockVector3.at(loc.getX(), loc.getY(), loc.getZ());
+            ApplicableRegionSet set = regions.getApplicableRegions(position);
+            return set.size() != 0;
+        }
+        return false;
     }
     
     public static boolean isTrusted(Player player, Location loc) {

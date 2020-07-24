@@ -20,6 +20,10 @@
     </properties>
     <repositories>
         <repository>
+            <id>mineacademy-repo</id>
+            <url>https://repo.mineacademy.org/repository/maven-public/</url>
+        </repository>
+        <repository>
             <id>spigotmc-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
@@ -54,7 +58,6 @@
             <groupId>org.mineacademy.libraries</groupId>
             <artifactId>foundation</artifactId>
             <version>${foundation.version}</version>
-
             <scope>compile</scope>
         </dependency>
         <dependency>

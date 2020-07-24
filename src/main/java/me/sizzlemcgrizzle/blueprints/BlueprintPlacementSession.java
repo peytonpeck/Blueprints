@@ -18,10 +18,6 @@ import com.sk89q.worldedit.math.transform.AffineTransform;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
 import com.sk89q.worldedit.world.block.BlockTypes;
-import com.sk89q.worldguard.WorldGuard;
-import com.sk89q.worldguard.protection.ApplicableRegionSet;
-import com.sk89q.worldguard.protection.managers.RegionManager;
-import com.sk89q.worldguard.protection.regions.RegionContainer;
 import de.craftlancer.clclans.CLClans;
 import de.craftlancer.clclans.Clan;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPostPasteEvent;
@@ -83,8 +79,6 @@ public class BlueprintPlacementSession {
     private ItemStack item;
     private Block block;
     private World world;
-    private RegionContainer container;
-    private RegionManager regions;
     private ClipboardHolder holder;
     private BossBar bossBar;
     private BukkitTask runnable;
@@ -113,8 +107,6 @@ public class BlueprintPlacementSession {
         this.block = block;
         this.world = world;
         this.inventory = player.getInventory();
-        this.container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-        this.regions = container.get(new BukkitWorld(world));
         this.holder = blueprint.getHolder(player);
         this.bossBar = blueprintsPlugin.getBossBar();
         this.gameMode = gameMode;
@@ -187,7 +179,7 @@ public class BlueprintPlacementSession {
                 public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
                     Location pasteLocation = new Location(world, location.getX(), location.getY(), location.getZ());
                     if ((!pasteLocation.getBlock().getType().isAir() && !Settings.Block.IGNORE_BLOCKS.contains(pasteLocation.getBlock().getType()))
-                            || isInRegion(pasteLocation)
+                            || BlueprintsPlugin.isInRegion(player, pasteLocation)
                             || !BlueprintsPlugin.isTrusted(player, pasteLocation))
                         errorBlockSet.add(pasteLocation);
                     return true;
@@ -313,24 +305,6 @@ public class BlueprintPlacementSession {
     }
     
     /**
-     * Checks if a location is in an admin claim
-     */
-    public boolean isInRegion(Location loc) {
-        if (player.isOp())
-            return false;
-        
-        if (WorldGuard.getInstance() != null && regions != null && !player.isOp()) {
-            BlockVector3 position = BlockVector3.at(loc.getX(), loc.getY(), loc.getZ());
-            ApplicableRegionSet set = regions.getApplicableRegions(position);
-            if (set.size() != 0) {
-                Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cYou cannot place a blueprint anywhere in an admin claim!");
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    /**
      * Completes the operation.
      */
     public void complete() {
@@ -343,7 +317,7 @@ public class BlueprintPlacementSession {
             if (!optional.isPresent()) {
                 if (!gameMode.equals(GameMode.CREATIVE))
                     player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
-                Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cYou must link chests to draw materials from! &4/playerblueprint link create");
+                Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cYou must link barrels or shulker boxes to draw materials from! &4/playerblueprint link create");
                 if (Settings.PLAY_SOUNDS)
                     player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
                 return;
@@ -352,7 +326,7 @@ public class BlueprintPlacementSession {
             if (!((PlayerBlueprint) blueprint).getMaterialMap().entrySet().stream().allMatch(entry -> optional.get().contains(entry.getKey(), entry.getValue()))) {
                 if (!gameMode.equals(GameMode.CREATIVE))
                     player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
-                Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cThe chests you have linked do not contain the materials needed!");
+                Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cThe barrels/shulker boxes you have linked do not contain the materials needed!");
                 if (Settings.PLAY_SOUNDS)
                     player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
                 return;
