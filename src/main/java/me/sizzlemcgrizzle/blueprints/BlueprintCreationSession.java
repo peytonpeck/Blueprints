@@ -110,7 +110,7 @@ public class BlueprintCreationSession {
     
     private ItemStack createItem(String name, String schematic) {
         return new ItemBuilder(Material.STONE)
-                .setCustomModelData(5)
+                .setCustomModelData(4)
                 .setLore("§7Place this block to spawn the building.",
                         "§7Link chests to draw blocks from using",
                         "§3/blueprint link create§7.",

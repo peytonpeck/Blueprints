@@ -195,7 +195,7 @@ public class BlueprintsPlugin extends SimplePlugin {
             optional.get().reload();
         } else {
             PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.instance,
-                    ChatColor.DARK_PURPLE + Bukkit.getPlayer(owner).getName() + "'s Player Blueprints",
+                    ChatColor.DARK_PURPLE + Bukkit.getOfflinePlayer(owner).getName() + "'s Player Blueprints",
                     true,
                     6,
                     PlayerBlueprint.getPageItems(owner),

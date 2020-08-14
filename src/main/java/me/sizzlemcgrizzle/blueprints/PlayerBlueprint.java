@@ -48,7 +48,6 @@ public class PlayerBlueprint extends Blueprint {
         this.owner = owner;
         this.materialMap = materialMap;
         setCost();
-        setMaterialGUI();
     }
     
     public PlayerBlueprint(Map<String, Object> map) {
@@ -66,7 +65,6 @@ public class PlayerBlueprint extends Blueprint {
             
             }
         });
-        setMaterialGUI();
     }
     
     @Override
@@ -123,7 +121,7 @@ public class PlayerBlueprint extends Blueprint {
             optional.get().setPageItems(PlayerBlueprint.getPageItems(player));
         } else {
             PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.instance,
-                    ChatColor.DARK_PURPLE + Bukkit.getPlayer(owner).getName() + "'s Player Blueprints",
+                    ChatColor.DARK_PURPLE + Bukkit.getOfflinePlayer(owner).getName() + "'s Player Blueprints",
                     true,
                     6,
                     PlayerBlueprint.getPageItems(player),
@@ -156,7 +154,7 @@ public class PlayerBlueprint extends Blueprint {
         List<PageItem> pageItems = new ArrayList<>();
         
         PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.instance,
-                org.bukkit.ChatColor.DARK_PURPLE + Bukkit.getPlayer(owner).getName() + "'s Player Blueprints",
+                org.bukkit.ChatColor.DARK_PURPLE + Bukkit.getOfflinePlayer(owner).getName() + "'s Player Blueprints",
                 true,
                 6,
                 PlayerBlueprint.getPageItems(owner),
@@ -184,6 +182,8 @@ public class PlayerBlueprint extends Blueprint {
     }
     
     public PlayerBlueprintMaterialMenu getMaterialGUI() {
+        if (materialGUI == null)
+            setMaterialGUI();
         return materialGUI;
     }
     
