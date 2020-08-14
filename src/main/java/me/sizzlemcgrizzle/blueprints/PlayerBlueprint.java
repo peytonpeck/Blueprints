@@ -6,31 +6,40 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import de.craftlancer.core.Utils;
-import de.craftlancer.core.gui.GUIInventory;
-import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintListGUI;
+import de.craftlancer.core.gui.PageItem;
+import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMaterialMenu;
+import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMenu;
+import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintRemoveGUI;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.mineacademy.fo.Common;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class PlayerBlueprint extends Blueprint {
     
-    private Map<Material, Integer> materialMap = new HashMap<>();
+    private Map<Material, Integer> materialMap;
+    
+    private PlayerBlueprintMaterialMenu materialGUI;
     private UUID owner;
-    private GUIInventory inventory;
     private double cost;
     
     public PlayerBlueprint(ItemStack item, String schematic, String type, UUID owner, Map<Material, Integer> materialMap) {
@@ -39,10 +48,13 @@ public class PlayerBlueprint extends Blueprint {
         this.owner = owner;
         this.materialMap = materialMap;
         setCost();
+        setMaterialGUI();
     }
     
     public PlayerBlueprint(Map<String, Object> map) {
         super(map);
+        
+        materialMap = new HashMap<>();
         
         this.owner = UUID.fromString((String) map.get("owner"));
         this.cost = (double) map.get("cost");
@@ -54,6 +66,7 @@ public class PlayerBlueprint extends Blueprint {
             
             }
         });
+        setMaterialGUI();
     }
     
     @Override
@@ -89,42 +102,6 @@ public class PlayerBlueprint extends Blueprint {
         materialMap.values().forEach(integer -> cost += Settings.PLAYER_BLUEPRINT_PRICE_MODIFIER * integer);
     }
     
-    private void createInventory() {
-        inventory = new GUIInventory(BlueprintsPlugin.instance, ChatColor.DARK_PURPLE + "Blueprint Material List");
-        inventory.fill(Utils.buildItemStack(Material.BLACK_STAINED_GLASS_PANE, net.md_5.bungee.api.ChatColor.BLACK + "", Collections.emptyList()));
-        
-        int slot = 10;
-        for (Map.Entry<Material, Integer> entry : materialMap.entrySet()) {
-            if (entry.getKey() == Material.AIR)
-                continue;
-            String name = ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "ITEM: " + ChatColor.AQUA + entry.getKey().name().toLowerCase().replace('_', ' ');
-            List<String> lore = Arrays.asList("", ChatColor.GRAY + "Amount needed: " + ChatColor.GREEN + entry.getValue());
-            ItemStack item = Utils.buildItemStack(entry.getKey(), name, lore);
-            item.setAmount(Math.min(item.getMaxStackSize(), entry.getValue()));
-            
-            inventory.setItem(slot, item);
-            
-            if (slot % 9 == 7)
-                slot += 3;
-            else
-                slot++;
-        }
-        
-        inventory.setItem(49, getQuestionMarkItem());
-        
-        inventory.setItem(53, Utils.buildItemStack(Material.ENDER_EYE, ChatColor.GOLD + "Back to Main Page", Collections.emptyList()));
-    }
-    
-    public void display(Player player) {
-        if (inventory == null)
-            createInventory();
-        
-        inventory.setClickAction(53, () -> new PlayerBlueprintListGUI(player).display(player));
-        
-        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5F, 2F);
-        player.openInventory(inventory.getInventory());
-    }
-    
     public UUID getOwner() {
         return owner;
     }
@@ -137,23 +114,112 @@ public class PlayerBlueprint extends Blueprint {
         return materialMap;
     }
     
-    private ItemStack getQuestionMarkItem() {
-        ItemStack questionMarkItem = Utils.buildItemStack(Material.STONE, ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "What is this?",
-                Arrays.asList("",
-                        ChatColor.GRAY + "This page shows all the materials",
-                        ChatColor.GRAY + "needed for making the blueprint",
-                        ChatColor.GRAY + "you clicked on.",
-                        ""));
+    public void remove() {
+        UUID player = owner;
+        owner = UUID.randomUUID();
+        //Dealing with player blueprint guis and updating them
+        Optional<PlayerBlueprintMenu> optional = BlueprintsPlugin.instance.getGuiAssignmentFactory().getPlayerBlueprintListGUIFor(player);
+        if (optional.isPresent()) {
+            optional.get().setPageItems(PlayerBlueprint.getPageItems(player));
+        } else {
+            PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.instance,
+                    ChatColor.DARK_PURPLE + Bukkit.getPlayer(owner).getName() + "'s Player Blueprints",
+                    true,
+                    6,
+                    PlayerBlueprint.getPageItems(player),
+                    true,
+                    player);
+            
+            BlueprintsPlugin.instance.getGuiAssignmentFactory().addPlayerBlueprintListGUI(gui);
+        }
         
-        ItemMeta m = questionMarkItem.getItemMeta();
-        m.setCustomModelData(5);
-        questionMarkItem.setItemMeta(m);
-        
-        return questionMarkItem;
     }
     
-    public void remove() {
-        owner = UUID.randomUUID();
+    private boolean charge(Player player) {
+        if (!Settings.USE_ECONOMY)
+            return true;
+        
+        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player.getUniqueId());
+        
+        if (!BlueprintsPlugin.getEconomy().has(offlinePlayer, getCost())) {
+            player.playSound(player.getLocation(), Sound.ENTITY_WITHER_HURT, 0.5F, 1F);
+            Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&eYou cannot afford the &6$" + getCost() + " &efor this blueprint!");
+            return false;
+        } else {
+            BlueprintsPlugin.getEconomy().withdrawPlayer(offlinePlayer, getCost());
+            Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&aYou have purchased this blueprint for &2$" + getCost() + "&a!");
+            return true;
+        }
+    }
+    
+    private void setMaterialGUI() {
+        List<PageItem> pageItems = new ArrayList<>();
+        
+        PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.instance,
+                org.bukkit.ChatColor.DARK_PURPLE + Bukkit.getPlayer(owner).getName() + "'s Player Blueprints",
+                true,
+                6,
+                PlayerBlueprint.getPageItems(owner),
+                true,
+                owner);
+        
+        BlueprintsPlugin.instance.getGuiAssignmentFactory().addPlayerBlueprintListGUI(gui);
+        
+        for (Map.Entry<Material, Integer> entry : materialMap.entrySet()) {
+            String name = ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "ITEM: " + ChatColor.AQUA + entry.getKey().name().toLowerCase().replace('_', ' ');
+            List<String> lore = Arrays.asList("", ChatColor.GRAY + "Amount needed: " + ChatColor.GREEN + entry.getValue());
+            ItemStack item = Utils.buildItemStack(entry.getKey(), name, lore);
+            item.setAmount(Math.min(item.getMaxStackSize(), entry.getValue()));
+            
+            pageItems.add(new PageItem(item));
+        }
+        
+        this.materialGUI = new PlayerBlueprintMaterialMenu(BlueprintsPlugin.instance,
+                ChatColor.DARK_PURPLE + "Blueprint Material List",
+                true,
+                6,
+                pageItems,
+                true,
+                gui);
+    }
+    
+    public PlayerBlueprintMaterialMenu getMaterialGUI() {
+        return materialGUI;
+    }
+    
+    public static List<PageItem> getPageItems(UUID uuid) {
+        
+        List<PageItem> pageItems = new ArrayList<>();
+        
+        //Adds all items and their consumers
+        for (PlayerBlueprint blueprint : BlueprintsPlugin.instance.getPlayerBlueprints().stream().filter(blueprint -> blueprint.getOwner().equals(uuid)).collect(Collectors.toList())) {
+            
+            ItemStack item = blueprint.getItem().clone();
+            ItemMeta meta = item.getItemMeta();
+            List<String> lore = meta.getLore();
+            
+            lore.add("");
+            lore.add(ChatColor.AQUA + "Left click" + ChatColor.GRAY + " to " + ChatColor.GREEN + "buy" + ChatColor.GRAY + " item for " + ChatColor.GREEN + "$" + blueprint.getCost() + ChatColor.GRAY + ".");
+            lore.add(ChatColor.AQUA + "Right click" + ChatColor.GRAY + " to " + ChatColor.LIGHT_PURPLE + "open" + ChatColor.GRAY + " material list.");
+            lore.add(ChatColor.AQUA + "Shift left click" + ChatColor.GRAY + " to " + ChatColor.RED + "remove" + ChatColor.GRAY + " blueprint.");
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+            
+            PageItem pageItem = new PageItem(item);
+            
+            pageItem.setClickAction(p -> blueprint.getMaterialGUI().display(p), ClickType.RIGHT);
+            pageItem.setClickAction(p -> {
+                if (!blueprint.charge(p))
+                    return;
+                p.getInventory().addItem(blueprint.getItem());
+                p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_COW_BELL, 0.5F, 2F);
+            }, ClickType.LEFT);
+            pageItem.setClickAction(p -> new PlayerBlueprintRemoveGUI(p, blueprint).display(p), ClickType.SHIFT_LEFT);
+            
+            pageItems.add(pageItem);
+        }
+        
+        return pageItems;
     }
     
     public static int getAmount(Player player) {

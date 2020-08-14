@@ -11,6 +11,8 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandGroup;
 import me.sizzlemcgrizzle.blueprints.command.PlayerBlueprintCommandGroup;
 import me.sizzlemcgrizzle.blueprints.event.BlueprintListener;
+import me.sizzlemcgrizzle.blueprints.gui.GUIAssignmentFactory;
+import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMenu;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
@@ -38,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class BlueprintsPlugin extends SimplePlugin {
@@ -46,6 +49,7 @@ public class BlueprintsPlugin extends SimplePlugin {
     public static BlueprintsPlugin instance;
     private static Economy econ = null;
     
+    private GUIAssignmentFactory guiAssignmentFactory;
     private BossBar bossBar;
     
     private List<Blueprint> blueprints;
@@ -81,6 +85,7 @@ public class BlueprintsPlugin extends SimplePlugin {
         if (Bukkit.getPluginManager().isPluginEnabled("CLClans"))
             Common.log("Successfully hooked into CLClans!");
         this.bossBar = this.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SOLID, BarFlag.CREATE_FOG);
+        this.guiAssignmentFactory = new GUIAssignmentFactory();
     }
     
     @Override
@@ -154,7 +159,7 @@ public class BlueprintsPlugin extends SimplePlugin {
         
         YamlConfiguration config = YamlConfiguration.loadConfiguration(BLUEPRINTS_FILE);
         
-        config.set("blueprints", blueprints.stream().filter(blueprint -> !(blueprint instanceof PlayerBlueprint)).collect(Collectors.toList()));
+        config.set("blueprints", blueprints.stream().filter(blueprint -> blueprint != null && !(blueprint instanceof PlayerBlueprint)).collect(Collectors.toList()));
         config.set("playerBlueprints", blueprints.stream().filter(blueprint -> blueprint instanceof PlayerBlueprint).collect(Collectors.toList()));
         
         try {
@@ -178,6 +183,27 @@ public class BlueprintsPlugin extends SimplePlugin {
     
     public void addBlueprint(Blueprint blueprint) {
         blueprints.add(blueprint);
+        if (!(blueprint instanceof PlayerBlueprint))
+            return;
+        
+        //Dealing with player blueprint guis and updating them
+        UUID owner = ((PlayerBlueprint) blueprint).getOwner();
+        
+        Optional<PlayerBlueprintMenu> optional = getGuiAssignmentFactory().getPlayerBlueprintListGUIFor(owner);
+        if (optional.isPresent()) {
+            optional.get().setPageItems(PlayerBlueprint.getPageItems(((PlayerBlueprint) blueprint).getOwner()));
+            optional.get().reload();
+        } else {
+            PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.instance,
+                    ChatColor.DARK_PURPLE + Bukkit.getPlayer(owner).getName() + "'s Player Blueprints",
+                    true,
+                    6,
+                    PlayerBlueprint.getPageItems(owner),
+                    true,
+                    owner);
+            
+            BlueprintsPlugin.instance.getGuiAssignmentFactory().addPlayerBlueprintListGUI(gui);
+        }
     }
     
     public void removeBlueprint(Blueprint blueprint) {
@@ -224,6 +250,10 @@ public class BlueprintsPlugin extends SimplePlugin {
     
     public Optional<InventoryLink> getLink(Player player) {
         return inventoryLinks.stream().filter(link -> link.getOwner().equals(player)).findFirst();
+    }
+    
+    public GUIAssignmentFactory getGuiAssignmentFactory() {
+        return guiAssignmentFactory;
     }
     
     @Override

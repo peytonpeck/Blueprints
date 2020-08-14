@@ -37,6 +37,6 @@ public class PlayerBlueprintMaterialCommand extends SimpleSubCommand {
             return;
         }
         
-        optional.get().display(player);
+        optional.get().getMaterialGUI().display(player);
     }
 }

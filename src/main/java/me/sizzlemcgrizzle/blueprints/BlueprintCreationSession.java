@@ -13,6 +13,7 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import de.craftlancer.core.Utils;
+import de.craftlancer.core.util.ItemBuilder;
 import de.craftlancer.core.util.ParticleUtil;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import me.sizzlemcgrizzle.blueprints.util.MaterialUtil;
@@ -22,7 +23,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
@@ -31,9 +31,7 @@ import org.mineacademy.fo.Common;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -50,7 +48,6 @@ public class BlueprintCreationSession {
     }
     
     public void complete(String name) {
-        
         Map<Material, Integer> materialMap = new HashMap<>();
         BoundingBox box = new BoundingBox(position1.getX(), position1.getY(), position1.getZ(), position2.getX(), position2.getY(), position2.getZ());
         
@@ -88,26 +85,10 @@ public class BlueprintCreationSession {
             e.printStackTrace();
         }
         
-        String schematic = UUID.randomUUID().toString() + ".schem";
-        List<String> lore = Arrays.asList(
-                ChatColor.GRAY + "Place this block to spawn the building.",
-                ChatColor.GRAY + "Link chests to draw blocks from using",
-                ChatColor.DARK_AQUA + "/blueprint link create" + ChatColor.GRAY + ".",
-                "",
-                ChatColor.GRAY + "Blueprint made by: " + ChatColor.GREEN + owner.getName(),
-                "",
-                ChatColor.DARK_GREEN + "" + ChatColor.ITALIC + "/cchelp blueprints",
-                ChatColor.RED + "" + ChatColor.ITALIC + "Once placed it cannot be undone.");
-        ItemStack item = Utils.buildItemStack(Material.STONE,
-                ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "Player Blueprint: " +
-                        ChatColor.WHITE + (owner.hasPermission("blueprints.create.color") ? ChatColor.translateAlternateColorCodes('&', name) : name),
-                lore);
+        String schematic = UUID.randomUUID().toString();
+        ItemStack item = createItem(name, schematic);
         
-        ItemMeta meta = item.getItemMeta();
-        meta.setCustomModelData(4);
-        item.setItemMeta(meta);
-        
-        File file = new File(BlueprintsPlugin.instance.getDataFolder() + File.separator + "/playerblueprints" + File.separator + "/" + schematic);
+        File file = new File(BlueprintsPlugin.instance.getDataFolder() + File.separator + "/playerblueprints" + File.separator + "/" + schematic + ".schem");
         
         try {
             if (!file.exists())
@@ -122,9 +103,26 @@ public class BlueprintCreationSession {
             e.printStackTrace();
         }
         
-        BlueprintsPlugin.instance.addBlueprint(new PlayerBlueprint(item, schematic, "NORMAL", owner.getUniqueId(), materialMap));
+        BlueprintsPlugin.instance.addBlueprint(new PlayerBlueprint(item, schematic + ".schem", "NORMAL", owner.getUniqueId(), materialMap));
         
         BlueprintsPlugin.instance.removeCreationSession(owner);
+    }
+    
+    private ItemStack createItem(String name, String schematic) {
+        return new ItemBuilder(Material.STONE)
+                .setCustomModelData(5)
+                .setLore("§7Place this block to spawn the building.",
+                        "§7Link chests to draw blocks from using",
+                        "§3/blueprint link create§7.",
+                        "",
+                        "§7Blueprint made by: §a" + owner.getName(),
+                        "",
+                        "§o§2/cchelp blueprints",
+                        "§o§cOnce placed it cannot be undone.")
+                .setDisplayName(ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "Player Blueprint: " +
+                        ChatColor.WHITE + (owner.hasPermission("blueprints.create.color") ? ChatColor.translateAlternateColorCodes('&', name) : name))
+                .addPersistentData(BlueprintsPlugin.instance, "blueprint-id", schematic)
+                .build();
     }
     
     public void remove() {
