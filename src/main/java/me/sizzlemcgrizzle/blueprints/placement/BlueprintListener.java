@@ -1,11 +1,7 @@
-package me.sizzlemcgrizzle.blueprints.event;
+package me.sizzlemcgrizzle.blueprints.placement;
 
 import de.craftlancer.core.LambdaRunnable;
-import me.sizzlemcgrizzle.blueprints.Blueprint;
-import me.sizzlemcgrizzle.blueprints.BlueprintCreationSession;
-import me.sizzlemcgrizzle.blueprints.BlueprintPlacementSession;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
-import me.sizzlemcgrizzle.blueprints.InventoryLink;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPostPasteEvent;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.Location;

@@ -56,6 +56,7 @@ public class Settings extends SimpleSettings {
         public static String PLACEMENT_DENIED;
         public static String IS_CONVERSING;
         public static String INVALID_SCHEMATIC;
+        public static String ABOVE_Y_255;
         
         private static void init() {
             pathPrefix("Messages");
@@ -67,6 +68,7 @@ public class Settings extends SimpleSettings {
             PLACEMENT_DENIED = getString("Placement_Denied");
             IS_CONVERSING = getString("Is_Conversing");
             INVALID_SCHEMATIC = getString("Invalid_Schematic");
+            ABOVE_Y_255 = getString("Above_Y_255");
         }
         
     }

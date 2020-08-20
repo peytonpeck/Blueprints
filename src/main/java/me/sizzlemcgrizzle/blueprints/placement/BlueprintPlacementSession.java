@@ -1,4 +1,4 @@
-package me.sizzlemcgrizzle.blueprints;
+package me.sizzlemcgrizzle.blueprints.placement;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -20,6 +20,7 @@ import com.sk89q.worldedit.world.block.BlockStateHolder;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import de.craftlancer.clclans.CLClans;
 import de.craftlancer.clclans.Clan;
+import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPostPasteEvent;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPrePasteEvent;
 import me.sizzlemcgrizzle.blueprints.conversation.ConfirmationPrompt;
@@ -71,7 +72,7 @@ public class BlueprintPlacementSession {
     private static final String PLACEMENT_DENIED = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.PLACEMENT_DENIED;
     private static final String PLACEMENT_ACCEPTED = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BUILD_SUCCESS;
     public static final String IS_CONVERSING = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.IS_CONVERSING;
-    public static final String INVALID_SCHEMATIC = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.INVALID_SCHEMATIC;
+    public static final String ABOVE_Y_255 = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.ABOVE_Y_255;
     
     private Blueprint blueprint;
     private Player player;
@@ -147,14 +148,18 @@ public class BlueprintPlacementSession {
         getBlocksInWay();
         
         if (errorBlockSet.size() > 0) {
-            if (Settings.Block.SHOW_ERROR_PREVIEW)
-                Common.tell(player, BLOCKS_IN_WAY);
-            else
-                Common.tell(player, BLOCKS_IN_WAY_NO_PREVIEW);
-            if (Settings.PLAY_SOUNDS)
-                player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
-            showErrorBlocks();
-            
+            if (errorBlockSet.stream().anyMatch(loc -> loc.getY() > 255)) {
+                Common.tell(player, ABOVE_Y_255);
+            } else {
+                if (Settings.Block.SHOW_ERROR_PREVIEW)
+                    Common.tell(player, BLOCKS_IN_WAY);
+                else
+                    Common.tell(player, BLOCKS_IN_WAY_NO_PREVIEW);
+                if (Settings.PLAY_SOUNDS)
+                    player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+                showErrorBlocks();
+                
+            }
             if (!gameMode.equals(GameMode.CREATIVE))
                 player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
             return;
@@ -180,7 +185,8 @@ public class BlueprintPlacementSession {
                     Location pasteLocation = new Location(world, location.getX(), location.getY(), location.getZ());
                     if ((!pasteLocation.getBlock().getType().isAir() && !Settings.Block.IGNORE_BLOCKS.contains(pasteLocation.getBlock().getType()))
                             || BlueprintsPlugin.isInRegion(player, pasteLocation)
-                            || !BlueprintsPlugin.isTrusted(player, pasteLocation))
+                            || !BlueprintsPlugin.isTrusted(player, pasteLocation)
+                            || pasteLocation.getY() > 255)
                         errorBlockSet.add(pasteLocation);
                     return true;
                 }

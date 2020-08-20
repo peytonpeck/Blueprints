@@ -1,4 +1,4 @@
-package me.sizzlemcgrizzle.blueprints;
+package me.sizzlemcgrizzle.blueprints.placement;
 
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;

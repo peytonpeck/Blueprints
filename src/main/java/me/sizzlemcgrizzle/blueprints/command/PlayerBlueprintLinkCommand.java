@@ -1,7 +1,7 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
-import me.sizzlemcgrizzle.blueprints.InventoryLink;
+import me.sizzlemcgrizzle.blueprints.placement.InventoryLink;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.Material;
 import org.bukkit.block.Barrel;

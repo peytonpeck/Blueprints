@@ -1,4 +1,4 @@
-package me.sizzlemcgrizzle.blueprints;
+package me.sizzlemcgrizzle.blueprints.placement;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;

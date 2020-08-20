@@ -69,6 +69,7 @@ Messages:
   Placement_Denied: "&eYou have cancelled the placement and your item has been returned."
   Is_Conversing: "&ePlease confirm/deny your existing placement before making a new one!"
   Invalid_Schematic: "&cThis blueprint is not valid! Please contact an administrator immediately!"
+  Above_Y_255: "&cPart of you blueprint will be placed above Y 255, so your placement has been cancelled."
 
 Log_Lag_Over_Milis: 100
 Debug: []

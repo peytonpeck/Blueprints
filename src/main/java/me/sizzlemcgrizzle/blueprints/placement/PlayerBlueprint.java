@@ -1,4 +1,4 @@
-package me.sizzlemcgrizzle.blueprints;
+package me.sizzlemcgrizzle.blueprints.placement;
 
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
@@ -7,6 +7,7 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import de.craftlancer.core.Utils;
 import de.craftlancer.core.gui.PageItem;
+import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMaterialMenu;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMenu;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintRemoveGUI;

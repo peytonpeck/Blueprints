@@ -3,7 +3,7 @@ package me.sizzlemcgrizzle.blueprints.gui;
 import de.craftlancer.core.Utils;
 import de.craftlancer.core.gui.GUIInventory;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
-import me.sizzlemcgrizzle.blueprints.PlayerBlueprint;
+import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;

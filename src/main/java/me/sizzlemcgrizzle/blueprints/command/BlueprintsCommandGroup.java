@@ -12,7 +12,6 @@ public class BlueprintsCommandGroup extends SimpleCommandGroup {
         registerSubcommand(new BlueprintsGetCommand(this));
         registerSubcommand(new BlueprintsConfigCommand(this));
         registerSubcommand(new BlueprintsAddtypeCommand(this));
-        registerSubcommand(new BlueprintsMigrateCommand(this));
     }
     
     @Override

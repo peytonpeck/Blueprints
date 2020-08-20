@@ -1,7 +1,7 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
-import me.sizzlemcgrizzle.blueprints.BlueprintCreationSession;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
+import me.sizzlemcgrizzle.blueprints.placement.BlueprintCreationSession;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;

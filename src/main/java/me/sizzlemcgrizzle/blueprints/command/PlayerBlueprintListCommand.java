@@ -1,8 +1,8 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
-import me.sizzlemcgrizzle.blueprints.PlayerBlueprint;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMenu;
+import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.mineacademy.fo.command.SimpleCommandGroup;

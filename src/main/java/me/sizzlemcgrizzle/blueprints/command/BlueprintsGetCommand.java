@@ -1,8 +1,8 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
-import me.sizzlemcgrizzle.blueprints.Blueprint;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
-import me.sizzlemcgrizzle.blueprints.PlayerBlueprint;
+import me.sizzlemcgrizzle.blueprints.placement.Blueprint;
+import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.inventory.ItemStack;
 import org.mineacademy.fo.command.SimpleCommandGroup;

@@ -1,9 +1,9 @@
 package me.sizzlemcgrizzle.blueprints.util;
 
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-import me.sizzlemcgrizzle.blueprints.Blueprint;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
-import me.sizzlemcgrizzle.blueprints.PlayerBlueprint;
+import me.sizzlemcgrizzle.blueprints.placement.Blueprint;
+import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;

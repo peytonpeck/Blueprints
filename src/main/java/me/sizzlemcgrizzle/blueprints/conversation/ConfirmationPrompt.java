@@ -1,6 +1,6 @@
 package me.sizzlemcgrizzle.blueprints.conversation;
 
-import me.sizzlemcgrizzle.blueprints.BlueprintPlacementSession;
+import me.sizzlemcgrizzle.blueprints.placement.BlueprintPlacementSession;
 import org.apache.commons.lang.ArrayUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.conversations.ConversationContext;

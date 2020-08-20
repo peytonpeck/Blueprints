@@ -1,4 +1,4 @@
-package me.sizzlemcgrizzle.blueprints;
+package me.sizzlemcgrizzle.blueprints.placement;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -15,6 +15,7 @@ import com.sk89q.worldedit.world.block.BlockTypes;
 import de.craftlancer.core.Utils;
 import de.craftlancer.core.util.ItemBuilder;
 import de.craftlancer.core.util.ParticleUtil;
+import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import me.sizzlemcgrizzle.blueprints.util.MaterialUtil;
 import org.bukkit.ChatColor;

@@ -10,9 +10,13 @@ import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandGroup;
 import me.sizzlemcgrizzle.blueprints.command.PlayerBlueprintCommandGroup;
-import me.sizzlemcgrizzle.blueprints.event.BlueprintListener;
 import me.sizzlemcgrizzle.blueprints.gui.GUIAssignmentFactory;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMenu;
+import me.sizzlemcgrizzle.blueprints.placement.Blueprint;
+import me.sizzlemcgrizzle.blueprints.placement.BlueprintCreationSession;
+import me.sizzlemcgrizzle.blueprints.placement.BlueprintListener;
+import me.sizzlemcgrizzle.blueprints.placement.InventoryLink;
+import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
@@ -86,6 +90,9 @@ public class BlueprintsPlugin extends SimplePlugin {
             Common.log("Successfully hooked into CLClans!");
         this.bossBar = this.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SOLID, BarFlag.CREATE_FOG);
         this.guiAssignmentFactory = new GUIAssignmentFactory();
+        
+        if (BlueprintsPlugin.BLUEPRINTS_FILE.exists())
+            migrateBlueprints();
     }
     
     @Override
@@ -100,6 +107,15 @@ public class BlueprintsPlugin extends SimplePlugin {
     
     public static Economy getEconomy() {
         return econ;
+    }
+    
+    private void migrateBlueprints() {
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(BlueprintsPlugin.BLUEPRINTS_FILE);
+        
+        config.getKeys(false).stream().filter(key -> !key.equalsIgnoreCase("blueprints") && !key.equalsIgnoreCase("playerBlueprints")).forEach(key ->
+                BlueprintsPlugin.instance.addBlueprint(new Blueprint(config.getConfigurationSection(key).getItemStack("Blueprint"),
+                        config.getConfigurationSection(key).getString("Schematic"),
+                        config.getConfigurationSection(key).contains("Type") ? config.getConfigurationSection(key).getString("Type") : null)));
     }
     
     public static boolean isInRegion(Player player, Location loc) {
