@@ -27,38 +27,38 @@ public class BlueprintsListCommand extends SimpleSubCommand {
             try {
                 num = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
-                tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must insert a number as an argument!");
+                tell(Settings.Messages.MESSAGE_PREFIX + "§cYou must insert a number as an argument!");
                 return;
             }
         
         HashMap<ItemStack, String> map = SchematicUtil.listBlueprints();
         
         if (map.size() == 0) {
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cThere are currently no blueprints.");
+            tell(Settings.Messages.MESSAGE_PREFIX + "§cThere are currently no blueprints.");
             return;
         }
         if (num < 1 || num > Math.ceil(map.size() / 7.0)) {
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cThere are no blueprints on this page!");
+            tell(Settings.Messages.MESSAGE_PREFIX + "§cThere are no blueprints on this page!");
             return;
         }
         
         int counter = 0;
-        tell(Settings.Messages.MESSAGE_PREFIX + "&6&m---&6&o Blueprint page " + num + "/" + (int) Math.max(Math.ceil(map.size() / 7.0), 1) + " &6&m---");
+        tell(Settings.Messages.MESSAGE_PREFIX + "§6§m---§6§o Blueprint page " + num + "/" + (int) Math.max(Math.ceil(map.size() / 7.0), 1) + " §6§m---");
         getPlayer().playSound(getPlayer().getLocation(), CompSound.NOTE_PLING.getSound(), 1F, 2F);
         for (Map.Entry<ItemStack, String> entry : map.entrySet()) {
             counter++;
             if ((7 * (num - 1)) < counter && counter <= (7 * num))
                 SimpleComponent
                         .of(Settings.Messages.MESSAGE_PREFIX)
-                        .append(" &e" + counter + ".  &f" + entry.getKey().getItemMeta().getDisplayName())
-                        .onHover("&5Click me to get the blueprint!\n\n&r&f" + entry.getKey().getItemMeta().getDisplayName() + "&7 uses \n&c" + entry.getValue() + "&7 as a schematic")
+                        .append(" §e" + counter + ".  §f" + entry.getKey().getItemMeta().getDisplayName())
+                        .onHover("§5Click me to get the blueprint!\n\n§r§f" + entry.getKey().getItemMeta().getDisplayName() + "§7 uses \n§c" + entry.getValue() + "§7 as a schematic")
                         .onClickRunCmd("/blueprints get " + entry.getValue())
                         .send(getPlayer());
         }
         if ((map.size() / 7.0) > num) {
             SimpleComponent
                     .of(Settings.Messages.MESSAGE_PREFIX)
-                    .append("&d&m---&d&o Click here for page " + (num + 1) + " &d&m---")
+                    .append("§d§m---§d§o Click here for page " + (num + 1) + " §d§m---")
                     .onClickRunCmd("/blueprints list " + (num + 1))
                     .send(getPlayer());
         }

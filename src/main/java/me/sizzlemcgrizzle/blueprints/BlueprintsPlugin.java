@@ -91,8 +91,6 @@ public class BlueprintsPlugin extends SimplePlugin {
         this.bossBar = this.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SOLID, BarFlag.CREATE_FOG);
         this.guiAssignmentFactory = new GUIAssignmentFactory();
         
-        if (BlueprintsPlugin.BLUEPRINTS_FILE.exists())
-            migrateBlueprints();
     }
     
     @Override
@@ -107,15 +105,6 @@ public class BlueprintsPlugin extends SimplePlugin {
     
     public static Economy getEconomy() {
         return econ;
-    }
-    
-    private void migrateBlueprints() {
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(BlueprintsPlugin.BLUEPRINTS_FILE);
-        
-        config.getKeys(false).stream().filter(key -> !key.equalsIgnoreCase("blueprints") && !key.equalsIgnoreCase("playerBlueprints")).forEach(key ->
-                BlueprintsPlugin.instance.addBlueprint(new Blueprint(config.getConfigurationSection(key).getItemStack("Blueprint"),
-                        config.getConfigurationSection(key).getString("Schematic"),
-                        config.getConfigurationSection(key).contains("Type") ? config.getConfigurationSection(key).getString("Type") : null)));
     }
     
     public static boolean isInRegion(Player player, Location loc) {
@@ -165,8 +154,11 @@ public class BlueprintsPlugin extends SimplePlugin {
         
         YamlConfiguration config = YamlConfiguration.loadConfiguration(BLUEPRINTS_FILE);
         
-        blueprints = config.contains("blueprints") ? (List<Blueprint>) config.getList("blueprints") : Collections.emptyList();
-        blueprints.addAll(config.contains("playerBlueprints") ? (List<Blueprint>) config.getList("playerBlueprints") : Collections.emptyList());
+        blueprints = config.contains("blueprints") ? (List<Blueprint>) config.getList("blueprints") : new ArrayList<>();
+        blueprints.addAll(config.contains("playerBlueprints") ? (List<Blueprint>) config.getList("playerBlueprints") : new ArrayList<>());
+        config.getKeys(false).stream().filter(key -> !key.equalsIgnoreCase("blueprints") && !key.equalsIgnoreCase("playerBlueprints")).forEach(key -> addBlueprint(new Blueprint(config.getConfigurationSection(key).getItemStack("Blueprint"),
+                config.getConfigurationSection(key).getString("Schematic"),
+                config.getConfigurationSection(key).contains("Type") ? config.getConfigurationSection(key).getString("Type") : null)));
     }
     
     private void saveBlueprints() {
