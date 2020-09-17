@@ -10,12 +10,13 @@ import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandGroup;
 import me.sizzlemcgrizzle.blueprints.command.PlayerBlueprintCommandGroup;
-import me.sizzlemcgrizzle.blueprints.gui.GUIAssignmentFactory;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMenu;
+import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintRemoveGUI;
 import me.sizzlemcgrizzle.blueprints.placement.Blueprint;
 import me.sizzlemcgrizzle.blueprints.placement.BlueprintCreationSession;
 import me.sizzlemcgrizzle.blueprints.placement.BlueprintListener;
 import me.sizzlemcgrizzle.blueprints.placement.InventoryLink;
+import me.sizzlemcgrizzle.blueprints.placement.MaterialContainer;
 import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import net.milkbowl.vault.economy.Economy;
@@ -30,7 +31,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
-import org.mineacademy.fo.Common;
 import org.mineacademy.fo.FileUtil;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.settings.YamlStaticConfig;
@@ -49,26 +49,27 @@ import java.util.stream.Collectors;
 
 public class BlueprintsPlugin extends SimplePlugin {
     
-    public static File BLUEPRINTS_FILE;
-    public static BlueprintsPlugin instance;
+    private final File blueprintFile = new File(getDataFolder(), "blueprints.yml");
+    
+    private static BlueprintsPlugin instance;
     private static Economy econ = null;
     
-    private GUIAssignmentFactory guiAssignmentFactory;
+    private PlayerBlueprintRemoveGUI playerBlueprintRemoveGUI;
     private BossBar bossBar;
     
     private List<Blueprint> blueprints;
-    private List<InventoryLink> inventoryLinks;
+    private List<InventoryLink> inventoryLinks = new ArrayList<>();
+    private List<PlayerBlueprintMenu> playerBlueprintListGUIs = new ArrayList<>();
     
     private Map<Player, BlueprintCreationSession> creationSessions = new HashMap<>();
     
     @Override
     public void onPluginStart() {
-        instance = this;
-        BLUEPRINTS_FILE = new File(getDataFolder(), "blueprints.yml");
-        inventoryLinks = new ArrayList<>();
-        
         ConfigurationSerialization.registerClass(Blueprint.class);
         ConfigurationSerialization.registerClass(PlayerBlueprint.class);
+        ConfigurationSerialization.registerClass(MaterialContainer.class);
+        
+        instance = this;
         
         if (Settings.USE_ECONOMY)
             setupEconomy();
@@ -76,21 +77,11 @@ public class BlueprintsPlugin extends SimplePlugin {
         loadBlueprints();
         
         registerEvents(new BlueprintListener());
-        
         registerCommands("blueprints", new BlueprintsCommandGroup());
         registerCommands("blueprint", Collections.singletonList("playerblueprint"), new PlayerBlueprintCommandGroup());
         
-        if (Bukkit.getPluginManager().isPluginEnabled("WorldEdit"))
-            Common.log("Successfully hooked into World Edit!");
-        
-        if (Bukkit.getPluginManager().isPluginEnabled("GriefPrevention"))
-            Common.log("Successfully hooked into Grief Prevention!");
-        
-        if (Bukkit.getPluginManager().isPluginEnabled("CLClans"))
-            Common.log("Successfully hooked into CLClans!");
-        this.bossBar = this.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SOLID, BarFlag.CREATE_FOG);
-        this.guiAssignmentFactory = new GUIAssignmentFactory();
-        
+        bossBar = getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SOLID, BarFlag.CREATE_FOG);
+        playerBlueprintRemoveGUI = new PlayerBlueprintRemoveGUI();
     }
     
     @Override
@@ -149,29 +140,31 @@ public class BlueprintsPlugin extends SimplePlugin {
     }
     
     private void loadBlueprints() {
-        if (!BLUEPRINTS_FILE.exists())
-            FileUtil.extract(BLUEPRINTS_FILE.getName());
+        if (!blueprintFile.exists())
+            FileUtil.extract(blueprintFile.getName());
         
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(BLUEPRINTS_FILE);
-        
-        blueprints = config.contains("blueprints") ? (List<Blueprint>) config.getList("blueprints") : new ArrayList<>();
-        blueprints.addAll(config.contains("playerBlueprints") ? (List<Blueprint>) config.getList("playerBlueprints") : new ArrayList<>());
-        config.getKeys(false).stream().filter(key -> !key.equalsIgnoreCase("blueprints") && !key.equalsIgnoreCase("playerBlueprints")).forEach(key -> addBlueprint(new Blueprint(config.getConfigurationSection(key).getItemStack("Blueprint"),
-                config.getConfigurationSection(key).getString("Schematic"),
-                config.getConfigurationSection(key).contains("Type") ? config.getConfigurationSection(key).getString("Type") : null)));
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(blueprintFile);
+        blueprints = (List<Blueprint>) config.getList("blueprints", new ArrayList<>());
+        blueprints.addAll((List<PlayerBlueprint>) config.getList("playerBlueprints", new ArrayList<>()));
+        config.getKeys(false).stream().filter(key -> !key.equalsIgnoreCase("blueprints") && !key.equalsIgnoreCase("playerBlueprints"))
+                .forEach(key -> addBlueprint(new Blueprint(
+                        config.getConfigurationSection(key).getItemStack("Blueprint"),
+                        config.getConfigurationSection(key).getString("Schematic"),
+                        config.getConfigurationSection(key).getString("Type", "NORMAL"))));
     }
     
     private void saveBlueprints() {
-        if (!BLUEPRINTS_FILE.exists())
-            FileUtil.extract(BLUEPRINTS_FILE.getName());
+        if (!blueprintFile.exists())
+            FileUtil.extract(blueprintFile.getName());
         
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(BLUEPRINTS_FILE);
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(blueprintFile);
         
+        config.getKeys(false).forEach(key -> config.set(key, null));
         config.set("blueprints", blueprints.stream().filter(blueprint -> blueprint != null && !(blueprint instanceof PlayerBlueprint)).collect(Collectors.toList()));
         config.set("playerBlueprints", blueprints.stream().filter(blueprint -> blueprint instanceof PlayerBlueprint).collect(Collectors.toList()));
         
         try {
-            config.save(BLUEPRINTS_FILE);
+            config.save(blueprintFile);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -183,6 +176,10 @@ public class BlueprintsPlugin extends SimplePlugin {
     
     public List<Blueprint> getBlueprints() {
         return blueprints;
+    }
+    
+    public PlayerBlueprintRemoveGUI getPlayerBlueprintRemoveGUI() {
+        return playerBlueprintRemoveGUI;
     }
     
     public List<PlayerBlueprint> getPlayerBlueprints() {
@@ -197,12 +194,12 @@ public class BlueprintsPlugin extends SimplePlugin {
         //Dealing with player blueprint guis and updating them
         UUID owner = ((PlayerBlueprint) blueprint).getOwner();
         
-        Optional<PlayerBlueprintMenu> optional = getGuiAssignmentFactory().getPlayerBlueprintListGUIFor(owner);
+        Optional<PlayerBlueprintMenu> optional = getPlayerBlueprintListGUIFor(owner);
         if (optional.isPresent()) {
             optional.get().setPageItems(PlayerBlueprint.getPageItems(((PlayerBlueprint) blueprint).getOwner()));
             optional.get().reload();
         } else {
-            PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.instance,
+            PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.getInstance(),
                     ChatColor.DARK_PURPLE + Bukkit.getOfflinePlayer(owner).getName() + "'s Player Blueprints",
                     true,
                     6,
@@ -210,7 +207,7 @@ public class BlueprintsPlugin extends SimplePlugin {
                     true,
                     owner);
             
-            BlueprintsPlugin.instance.getGuiAssignmentFactory().addPlayerBlueprintListGUI(gui);
+            BlueprintsPlugin.getInstance().addPlayerBlueprintListGUI(gui);
         }
     }
     
@@ -260,8 +257,12 @@ public class BlueprintsPlugin extends SimplePlugin {
         return inventoryLinks.stream().filter(link -> link.getOwner().equals(player)).findFirst();
     }
     
-    public GUIAssignmentFactory getGuiAssignmentFactory() {
-        return guiAssignmentFactory;
+    public Optional<PlayerBlueprintMenu> getPlayerBlueprintListGUIFor(UUID player) {
+        return playerBlueprintListGUIs.stream().filter(gui -> gui.getOwner().equals(player)).findFirst();
+    }
+    
+    public void addPlayerBlueprintListGUI(PlayerBlueprintMenu gui) {
+        playerBlueprintListGUIs.add(gui);
     }
     
     @Override
@@ -269,5 +270,7 @@ public class BlueprintsPlugin extends SimplePlugin {
         return Arrays.asList(Settings.class);
     }
     
-    
+    public static BlueprintsPlugin getInstance() {
+        return instance;
+    }
 }

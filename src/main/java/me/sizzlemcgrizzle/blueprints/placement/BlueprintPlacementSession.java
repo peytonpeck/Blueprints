@@ -65,7 +65,7 @@ import java.util.Set;
 public class BlueprintPlacementSession {
     private CLClans clans = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
     private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
-    private BlueprintsPlugin blueprintsPlugin = BlueprintsPlugin.instance;
+    private BlueprintsPlugin blueprintsPlugin = BlueprintsPlugin.getInstance();
     
     private static final String BLOCKS_IN_WAY = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_TRUE_MESSAGE;
     private static final String BLOCKS_IN_WAY_NO_PREVIEW = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_FALSE_MESSAGE;
@@ -318,7 +318,7 @@ public class BlueprintPlacementSession {
         pasteBlockSet.forEach(loc -> player.sendBlockChange(loc, loc.getBlock().getBlockData()));
         
         if (blueprint instanceof PlayerBlueprint) {
-            Optional<InventoryLink> optional = BlueprintsPlugin.instance.getLink(player);
+            Optional<InventoryLink> optional = BlueprintsPlugin.getInstance().getLink(player);
             
             if (!optional.isPresent()) {
                 if (!gameMode.equals(GameMode.CREATIVE))
@@ -341,7 +341,7 @@ public class BlueprintPlacementSession {
             ((PlayerBlueprint) blueprint).getMaterialMap().forEach((k, v) -> optional.get().take(k, v));
         }
         //If cancelled, the placement will be cancelled.
-        BlueprintPrePasteEvent event = new BlueprintPrePasteEvent(type, player, blueprint.getSchematic(), gameMode, item, location);
+        BlueprintPrePasteEvent event = new BlueprintPrePasteEvent(type, player, blueprint.getSchematic(), gameMode, item, location, blueprint instanceof PlayerBlueprint);
         Common.callEvent(event);
         
         if (event.isCancelled()) {
@@ -361,7 +361,7 @@ public class BlueprintPlacementSession {
                 new AdjustBannerRunnable(player, clans, bannerSet).runTaskLater(SimplePlugin.getInstance(), 5);
             
             Common.tell(player, PLACEMENT_ACCEPTED);
-            Common.callEvent(new BlueprintPostPasteEvent(type, player, blueprint.getSchematic(), gameMode, item, location, pasteSet));
+            Common.callEvent(new BlueprintPostPasteEvent(type, player, blueprint.getSchematic(), gameMode, item, location, pasteSet, blueprint instanceof PlayerBlueprint));
         }
     }
     

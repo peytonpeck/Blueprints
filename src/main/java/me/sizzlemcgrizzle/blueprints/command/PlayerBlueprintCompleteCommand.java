@@ -42,7 +42,7 @@ public class PlayerBlueprintCompleteCommand extends SimpleSubCommand {
             return;
         }
         
-        BlueprintCreationSession session = BlueprintsPlugin.instance.getCreationSession(player);
+        BlueprintCreationSession session = BlueprintsPlugin.getInstance().getCreationSession(player);
         
         int area = (int) session.getArea();
         if (area > Settings.PLAYER_BLUEPRINT_MAX_SIZE) {
@@ -55,7 +55,7 @@ public class PlayerBlueprintCompleteCommand extends SimpleSubCommand {
             return;
         }
         
-        player.removeMetadata("blueprint_create", BlueprintsPlugin.instance);
+        player.removeMetadata("blueprint_create", BlueprintsPlugin.getInstance());
         
         if (session.getPosition1().getWorld() != session.getPosition2().getWorld()) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cThe two positions are not in the same world!");

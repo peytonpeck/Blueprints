@@ -25,10 +25,10 @@ public class BlueprintsRemoveCommand extends SimpleSubCommand {
         
         if (item.getType().isAir())
             tell(Settings.Messages.MESSAGE_PREFIX + "&cYou are not holding a block!");
-        else if (BlueprintsPlugin.instance.getBlueprints().stream().noneMatch(blueprint -> blueprint.getItem().isSimilar(item)))
+        else if (BlueprintsPlugin.getInstance().getBlueprints().stream().noneMatch(blueprint -> blueprint.getItem().isSimilar(item)))
             tell(FAILURE_MESSAGE);
         else {
-            BlueprintsPlugin.instance.setBlueprints(BlueprintsPlugin.instance.getBlueprints().stream().filter(blueprint -> !blueprint.getItem().isSimilar(item)).collect(Collectors.toList()));
+            BlueprintsPlugin.getInstance().setBlueprints(BlueprintsPlugin.getInstance().getBlueprints().stream().filter(blueprint -> !blueprint.getItem().isSimilar(item)).collect(Collectors.toList()));
             tell(SUCCESS_MESSAGE);
         }
     }

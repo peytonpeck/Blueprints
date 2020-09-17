@@ -27,7 +27,7 @@ public class SchematicUtil {
         
         HashMap<ItemStack, String> listBlueprintMap = new HashMap<>();
         
-        BlueprintsPlugin.instance.getBlueprints().stream().filter(blueprint -> !(blueprint instanceof PlayerBlueprint))
+        BlueprintsPlugin.getInstance().getBlueprints().stream().filter(blueprint -> !(blueprint instanceof PlayerBlueprint))
                 .forEach(blueprint -> listBlueprintMap.put(blueprint.getItem(), blueprint.getSchematic()));
         
         return listBlueprintMap;
@@ -50,7 +50,7 @@ public class SchematicUtil {
     }
     
     public static List<ItemStack> getBlueprint(String schematic) {
-        return BlueprintsPlugin.instance.getBlueprints().stream().filter(blueprint -> blueprint.getSchematic().equals(schematic)).map(Blueprint::getItem).collect(Collectors.toList());
+        return BlueprintsPlugin.getInstance().getBlueprints().stream().filter(blueprint -> blueprint.getSchematic().equals(schematic)).map(Blueprint::getItem).collect(Collectors.toList());
     }
     
     

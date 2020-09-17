@@ -16,6 +16,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.mineacademy.fo.Common;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -63,11 +64,12 @@ public class Blueprint implements ConfigurationSerializable {
     }
     
     protected void getClipboardFromSchematic() {
-        File file = new File(worldEditPlugin.getDataFolder().getAbsolutePath() + File.separator + "/schematics" + File.separator + "/" + schematic);
+        File file = new File(worldEditPlugin.getDataFolder().getAbsolutePath(), "/schematics/" + schematic);
         ClipboardFormat format = ClipboardFormats.findByFile(file);
         try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
             clipboard = reader.read();
         } catch (IOException e) {
+            Common.log("The schematic for this blueprint cannot be found... please fix this or there may be major errors");
             e.printStackTrace();
         }
     }

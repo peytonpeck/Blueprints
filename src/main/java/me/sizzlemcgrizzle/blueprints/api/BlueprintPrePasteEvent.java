@@ -25,16 +25,18 @@ public class BlueprintPrePasteEvent extends Event implements Cancellable {
     private GameMode gamemode;
     private ItemStack item;
     private Location location;
+    private boolean isPlayerBlueprint;
     
     private boolean isCancelled = false;
     
-    public BlueprintPrePasteEvent(String type, Player player, String schematic, GameMode gamemode, ItemStack item, Location location) {
+    public BlueprintPrePasteEvent(String type, Player player, String schematic, GameMode gamemode, ItemStack item, Location location, boolean isPlayerBlueprint) {
         this.type = type;
         this.player = player;
         this.schematic = schematic;
         this.gamemode = gamemode;
         this.item = item;
         this.location = location;
+        this.isPlayerBlueprint = isPlayerBlueprint;
     }
     
     @Override
@@ -79,5 +81,9 @@ public class BlueprintPrePasteEvent extends Event implements Cancellable {
     
     public GameMode getGamemode() {
         return gamemode;
+    }
+    
+    public boolean isPlayerBlueprint() {
+        return isPlayerBlueprint;
     }
 }

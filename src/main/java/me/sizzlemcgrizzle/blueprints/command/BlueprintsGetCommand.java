@@ -24,13 +24,13 @@ public class BlueprintsGetCommand extends SimpleSubCommand {
     @Override
     protected List<String> tabComplete() {
         if (args.length == 1)
-            return completeLastWord(BlueprintsPlugin.instance.getBlueprints().stream().filter(blueprint -> !(blueprint instanceof PlayerBlueprint)).map(Blueprint::getSchematic).collect(Collectors.toList()));
+            return completeLastWord(BlueprintsPlugin.getInstance().getBlueprints().stream().filter(blueprint -> !(blueprint instanceof PlayerBlueprint)).map(Blueprint::getSchematic).collect(Collectors.toList()));
         return new ArrayList<>();
     }
     
     @Override
     protected void onCommand() {
-        List<ItemStack> itemList = BlueprintsPlugin.instance.getBlueprints().stream().filter(blueprint -> blueprint.getSchematic().equalsIgnoreCase(args[0])).map(Blueprint::getItem).collect(Collectors.toList());
+        List<ItemStack> itemList = BlueprintsPlugin.getInstance().getBlueprints().stream().filter(blueprint -> blueprint.getSchematic().equalsIgnoreCase(args[0])).map(Blueprint::getItem).collect(Collectors.toList());
         if (itemList.size() == 0)
             tell(Settings.Messages.MESSAGE_PREFIX + "&cThere are no blueprints using this schematic. See the list of blueprints with &4/blueprints list&c.");
         else {

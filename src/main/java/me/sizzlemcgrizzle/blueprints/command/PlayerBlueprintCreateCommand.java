@@ -26,9 +26,9 @@ public class PlayerBlueprintCreateCommand extends SimpleSubCommand {
             return;
         }
         
-        player.setMetadata("blueprint_create", new FixedMetadataValue(BlueprintsPlugin.instance, true));
+        player.setMetadata("blueprint_create", new FixedMetadataValue(BlueprintsPlugin.getInstance(), true));
         tell(Settings.Messages.MESSAGE_PREFIX + "&aPlace two blocks. Left click a block with no item in hand to set position 1, right click the other block to set position 2. When done, type &2/blueprint complete&a.");
         
-        BlueprintsPlugin.instance.addCreationSession(player, new BlueprintCreationSession(player));
+        BlueprintsPlugin.getInstance().addCreationSession(player, new BlueprintCreationSession(player));
     }
 }

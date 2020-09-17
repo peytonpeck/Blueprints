@@ -30,7 +30,7 @@ public class PlayerBlueprintMaterialCommand extends SimpleSubCommand {
             return;
         }
         
-        Optional<PlayerBlueprint> optional = BlueprintsPlugin.instance.getPlayerBlueprints().stream().filter(blueprint -> blueprint.getItem().isSimilar(item)).findFirst();
+        Optional<PlayerBlueprint> optional = BlueprintsPlugin.getInstance().getPlayerBlueprints().stream().filter(blueprint -> blueprint.getItem().isSimilar(item)).findFirst();
         
         if (!optional.isPresent()) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cThis item is not a player blueprint!");

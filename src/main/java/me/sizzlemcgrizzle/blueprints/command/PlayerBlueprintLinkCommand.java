@@ -51,12 +51,12 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
     }
     
     private void create(Player player) {
-        if (BlueprintsPlugin.instance.getLink(player).isPresent()) {
+        if (BlueprintsPlugin.getInstance().getLink(player).isPresent()) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cYou already have an active link! To remove, &4/playerblueprint link remove&c!");
             return;
         }
         
-        BlueprintsPlugin.instance.addInventoryLink(new InventoryLink(player));
+        BlueprintsPlugin.getInstance().addInventoryLink(new InventoryLink(player));
         tell(Settings.Messages.MESSAGE_PREFIX + "&aInventory link successfully created. &3/playerblueprint link add &awhile looking at a barrel or shulker box!");
     }
     
@@ -79,12 +79,12 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
         }
         
         
-        if (!BlueprintsPlugin.instance.getLink(player).isPresent()) {
+        if (!BlueprintsPlugin.getInstance().getLink(player).isPresent()) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must first create a link! &4/playerblueprint link create");
             return;
         }
         
-        InventoryLink link = BlueprintsPlugin.instance.getLink(player).get();
+        InventoryLink link = BlueprintsPlugin.getInstance().getLink(player).get();
         Inventory inventory;
         if (block.getType().name().contains("SHULKER_BOX"))
             inventory = ((ShulkerBox) block.getState()).getInventory();
@@ -105,12 +105,12 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
             return;
         }
         
-        if (!BlueprintsPlugin.instance.getLink(player).isPresent()) {
+        if (!BlueprintsPlugin.getInstance().getLink(player).isPresent()) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must first create a link! &4/playerblueprint link create");
             return;
         }
         
-        InventoryLink link = BlueprintsPlugin.instance.getLink(player).get();
+        InventoryLink link = BlueprintsPlugin.getInstance().getLink(player).get();
         Inventory inventory = ((Chest) block.getState()).getInventory();
         
         if (!link.remove(inventory))
@@ -120,12 +120,12 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
     }
     
     private void removeLink(Player player) {
-        if (!BlueprintsPlugin.instance.getLink(player).isPresent()) {
+        if (!BlueprintsPlugin.getInstance().getLink(player).isPresent()) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cYou do not have an active link!");
             return;
         }
         
-        BlueprintsPlugin.instance.removeInventoryLink(player);
+        BlueprintsPlugin.getInstance().removeInventoryLink(player);
         tell(Settings.Messages.MESSAGE_PREFIX + "&aInventory link successfully removed.");
     }
 }

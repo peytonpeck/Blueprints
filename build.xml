@@ -1,14 +1,6 @@
 <?xml version="1.0" ?>
 <project name="Blueprints" default="Build">
 
-    <!--
-        To make it easier to develop on multiple computers, I included three paths to
-        your test server below. Change the ones that are relevant for you.
-
-        Also make sure you change the name="Orion" above to the name of your plugin.
-     -->
-
-    <!-- Your MC test server location for Windows -->
     <condition property="serverPath" value="D:\Desktop Move 3-15-20\Test servers\Blueprints Test Server">
         <os family="windows"/>
     </condition>
@@ -18,21 +10,18 @@
         <os family="unix"/>
     </condition>
 
-    <!-- Your MC test server location for macOS -->
     <condition property="serverPath" value="\Users\kangarko\Desktop\Minecraft Server">
         <os family="mac"/>
     </condition>
 
-    <!-- Ninja: Read your pom.xml file to find the Foundation version we will be using -->
     <xmlproperty file="pom.xml" prefix="pom" keeproot="false"/>
     <property name="foundation.version" value="${pom.properties.foundation.version}"/>
 
     <!-- Finally, compile the plugin -->
     <target name="Build">
         <jar jarfile="${serverPath}\plugins\${ant.project.name}.jar" basedir="./target/classes/" includes="**/*">
-            <zipgroupfileset
-                    dir="${user.home}\.m2\repository\org\mineacademy\libraries\Foundation\${foundation.version}\"
-                    includes="**/*${foundation.version}.jar"/>
+            <zipgroupfileset dir="${user.home}/.m2/repository/com/github/kangarko/Foundation/${foundation.version}/"
+                             includes="**/*${foundation.version}.jar"/>
         </jar>
     </target>
 

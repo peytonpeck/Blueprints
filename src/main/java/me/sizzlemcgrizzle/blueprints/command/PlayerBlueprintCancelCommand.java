@@ -24,9 +24,9 @@ public class PlayerBlueprintCancelCommand extends SimpleSubCommand {
             return;
         }
         
-        BlueprintsPlugin.instance.removeCreationSession(player);
+        BlueprintsPlugin.getInstance().removeCreationSession(player);
         
-        player.removeMetadata("blueprint_create", BlueprintsPlugin.instance);
+        player.removeMetadata("blueprint_create", BlueprintsPlugin.getInstance());
         tell(Settings.Messages.MESSAGE_PREFIX + "&eBlueprint creation session cancelled.");
     }
 }

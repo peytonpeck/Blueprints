@@ -24,14 +24,14 @@ public class PlayerBlueprintListCommand extends SimpleSubCommand {
         
         Player player = getPlayer();
         
-        Optional<PlayerBlueprintMenu> optional = BlueprintsPlugin.instance.getGuiAssignmentFactory().getPlayerBlueprintListGUIFor(player.getUniqueId());
+        Optional<PlayerBlueprintMenu> optional = BlueprintsPlugin.getInstance().getPlayerBlueprintListGUIFor(player.getUniqueId());
         
         if (optional.isPresent()) {
             optional.get().display(player);
             return;
         }
         
-        PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.instance,
+        PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.getInstance(),
                 ChatColor.DARK_PURPLE + player.getName() + "'s Player Blueprints",
                 true,
                 5,
@@ -39,7 +39,7 @@ public class PlayerBlueprintListCommand extends SimpleSubCommand {
                 true,
                 player.getUniqueId());
         
-        BlueprintsPlugin.instance.getGuiAssignmentFactory().addPlayerBlueprintListGUI(gui);
+        BlueprintsPlugin.getInstance().addPlayerBlueprintListGUI(gui);
         
         gui.display(player);
     }

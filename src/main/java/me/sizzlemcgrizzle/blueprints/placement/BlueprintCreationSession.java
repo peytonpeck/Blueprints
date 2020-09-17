@@ -17,7 +17,6 @@ import de.craftlancer.core.util.ItemBuilder;
 import de.craftlancer.core.util.ParticleUtil;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
-import me.sizzlemcgrizzle.blueprints.util.MaterialUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -32,8 +31,6 @@ import org.mineacademy.fo.Common;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 public class BlueprintCreationSession {
@@ -45,23 +42,12 @@ public class BlueprintCreationSession {
     public BlueprintCreationSession(Player player) {
         this.owner = player;
         
-        BlueprintsPlugin.instance.addCreationSession(player, this);
+        BlueprintsPlugin.getInstance().addCreationSession(player, this);
     }
     
     public void complete(String name) {
-        Map<Material, Integer> materialMap = new HashMap<>();
         BoundingBox box = new BoundingBox(position1.getX(), position1.getY(), position1.getZ(), position2.getX(), position2.getY(), position2.getZ());
-        
-        for (double x = box.getMinX(); x <= box.getMaxX(); x++)
-            for (double y = box.getMinY(); y <= box.getMaxY(); y++)
-                for (double z = box.getMinZ(); z <= box.getMaxZ(); z++) {
-                    Material material = (new Location(position1.getWorld(), x, y, z)).getBlock().getType();
-                    if (material == Material.AIR || material == Material.WATER || material == Material.LAVA)
-                        continue;
-                    if (material.name().contains("WALL"))
-                        material = MaterialUtil.replaceWallMaterial(material);
-                    materialMap.compute(material, (k, v) -> materialMap.containsKey(k) ? materialMap.get(k) + 1 : 1);
-                }
+        MaterialContainer container = new MaterialContainer(box, position1.getWorld());
         
         CuboidRegion region = new CuboidRegion(BukkitAdapter.adapt(position1.getWorld()),
                 BlockVector3.at(position1.getX(), position1.getY(), position1.getZ()),
@@ -89,7 +75,7 @@ public class BlueprintCreationSession {
         String schematic = UUID.randomUUID().toString();
         ItemStack item = createItem(name, schematic);
         
-        File file = new File(BlueprintsPlugin.instance.getDataFolder() + File.separator + "/playerblueprints" + File.separator + "/" + schematic + ".schem");
+        File file = new File(BlueprintsPlugin.getInstance().getDataFolder(), "/playerblueprints/" + schematic + ".schem");
         
         try {
             if (!file.exists())
@@ -104,9 +90,9 @@ public class BlueprintCreationSession {
             e.printStackTrace();
         }
         
-        BlueprintsPlugin.instance.addBlueprint(new PlayerBlueprint(item, schematic + ".schem", "NORMAL", owner.getUniqueId(), materialMap));
+        BlueprintsPlugin.getInstance().addBlueprint(new PlayerBlueprint(item, schematic + ".schem", "NORMAL", owner.getUniqueId(), container));
         
-        BlueprintsPlugin.instance.removeCreationSession(owner);
+        BlueprintsPlugin.getInstance().removeCreationSession(owner);
     }
     
     private ItemStack createItem(String name, String schematic) {
@@ -122,7 +108,7 @@ public class BlueprintCreationSession {
                         "§o§cOnce placed it cannot be undone.")
                 .setDisplayName(ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "Player Blueprint: " +
                         ChatColor.WHITE + (owner.hasPermission("blueprints.create.color") ? ChatColor.translateAlternateColorCodes('&', name) : name))
-                .addPersistentData(BlueprintsPlugin.instance, "blueprint-id", schematic)
+                .addPersistentData(BlueprintsPlugin.getInstance(), "blueprint-id", schematic)
                 .build();
     }
     
@@ -213,6 +199,6 @@ public class BlueprintCreationSession {
                 
                 ParticleUtil.spawnParticleRect(minLocation, maxLocation, Color.TEAL);
             }
-        }.runTaskTimer(BlueprintsPlugin.instance, 1, 20);
+        }.runTaskTimer(BlueprintsPlugin.getInstance(), 1, 20);
     }
 }

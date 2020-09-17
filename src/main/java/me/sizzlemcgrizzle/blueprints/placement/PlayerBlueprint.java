@@ -10,7 +10,6 @@ import de.craftlancer.core.gui.PageItem;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMaterialMenu;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMenu;
-import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintRemoveGUI;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
@@ -28,7 +27,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,35 +35,25 @@ import java.util.stream.Collectors;
 
 public class PlayerBlueprint extends Blueprint {
     
-    private Map<Material, Integer> materialMap;
-    
+    private MaterialContainer materialContainer;
     private PlayerBlueprintMaterialMenu materialGUI;
     private UUID owner;
     private double cost;
     
-    public PlayerBlueprint(ItemStack item, String schematic, String type, UUID owner, Map<Material, Integer> materialMap) {
+    public PlayerBlueprint(ItemStack item, String schematic, String type, UUID owner, MaterialContainer container) {
         super(item, schematic, type);
         
         this.owner = owner;
-        this.materialMap = materialMap;
+        this.materialContainer = container;
         setCost();
     }
     
     public PlayerBlueprint(Map<String, Object> map) {
         super(map);
         
-        materialMap = new HashMap<>();
-        
         this.owner = UUID.fromString((String) map.get("owner"));
         this.cost = (double) map.get("cost");
-        
-        map.forEach((k, v) -> {
-            try {
-                materialMap.put(Material.valueOf(k), (Integer) v);
-            } catch (IllegalArgumentException ignored) {
-            
-            }
-        });
+        this.materialContainer = (MaterialContainer) map.get("materialContainer");
     }
     
     @Override
@@ -74,14 +62,14 @@ public class PlayerBlueprint extends Blueprint {
         
         map.put("owner", owner.toString());
         map.put("cost", cost);
-        materialMap.forEach((k, v) -> map.put(k.toString(), v));
+        map.put("materialContainer", materialContainer);
         
         return map;
     }
     
     @Override
     protected void getClipboardFromSchematic() {
-        File file = new File(BlueprintsPlugin.instance.getDataFolder() + File.separator + "/playerblueprints" + File.separator + "/" + getSchematic());
+        File file = new File(BlueprintsPlugin.getInstance().getDataFolder() + File.separator + "/playerblueprints" + File.separator + "/" + getSchematic());
         ClipboardFormat format = ClipboardFormats.findByFile(file);
         try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
             setClipboard(reader.read());
@@ -97,8 +85,7 @@ public class PlayerBlueprint extends Blueprint {
     }
     
     private void setCost() {
-        cost = 0;
-        materialMap.values().forEach(integer -> cost += Settings.PLAYER_BLUEPRINT_PRICE_MODIFIER * integer);
+        cost = materialContainer.getCost();
     }
     
     public UUID getOwner() {
@@ -110,18 +97,18 @@ public class PlayerBlueprint extends Blueprint {
     }
     
     public Map<Material, Integer> getMaterialMap() {
-        return materialMap;
+        return materialContainer.getMaterialMap();
     }
     
     public void remove() {
         UUID player = owner;
         owner = UUID.randomUUID();
         //Dealing with player blueprint guis and updating them
-        Optional<PlayerBlueprintMenu> optional = BlueprintsPlugin.instance.getGuiAssignmentFactory().getPlayerBlueprintListGUIFor(player);
+        Optional<PlayerBlueprintMenu> optional = BlueprintsPlugin.getInstance().getPlayerBlueprintListGUIFor(player);
         if (optional.isPresent()) {
             optional.get().setPageItems(PlayerBlueprint.getPageItems(player));
         } else {
-            PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.instance,
+            PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.getInstance(),
                     ChatColor.DARK_PURPLE + Bukkit.getOfflinePlayer(owner).getName() + "'s Player Blueprints",
                     true,
                     6,
@@ -129,7 +116,7 @@ public class PlayerBlueprint extends Blueprint {
                     true,
                     player);
             
-            BlueprintsPlugin.instance.getGuiAssignmentFactory().addPlayerBlueprintListGUI(gui);
+            BlueprintsPlugin.getInstance().addPlayerBlueprintListGUI(gui);
         }
         
     }
@@ -154,7 +141,7 @@ public class PlayerBlueprint extends Blueprint {
     private void setMaterialGUI() {
         List<PageItem> pageItems = new ArrayList<>();
         
-        PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.instance,
+        PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.getInstance(),
                 org.bukkit.ChatColor.DARK_PURPLE + Bukkit.getOfflinePlayer(owner).getName() + "'s Player Blueprints",
                 true,
                 6,
@@ -162,9 +149,9 @@ public class PlayerBlueprint extends Blueprint {
                 true,
                 owner);
         
-        BlueprintsPlugin.instance.getGuiAssignmentFactory().addPlayerBlueprintListGUI(gui);
+        BlueprintsPlugin.getInstance().addPlayerBlueprintListGUI(gui);
         
-        for (Map.Entry<Material, Integer> entry : materialMap.entrySet()) {
+        for (Map.Entry<Material, Integer> entry : getMaterialMap().entrySet()) {
             String name = ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "ITEM: " + ChatColor.AQUA + entry.getKey().name().toLowerCase().replace('_', ' ');
             List<String> lore = Arrays.asList("", ChatColor.GRAY + "Amount needed: " + ChatColor.GREEN + entry.getValue());
             ItemStack item = Utils.buildItemStack(entry.getKey(), name, lore);
@@ -173,7 +160,7 @@ public class PlayerBlueprint extends Blueprint {
             pageItems.add(new PageItem(item));
         }
         
-        this.materialGUI = new PlayerBlueprintMaterialMenu(BlueprintsPlugin.instance,
+        this.materialGUI = new PlayerBlueprintMaterialMenu(BlueprintsPlugin.getInstance(),
                 ChatColor.DARK_PURPLE + "Blueprint Material List",
                 true,
                 6,
@@ -193,7 +180,7 @@ public class PlayerBlueprint extends Blueprint {
         List<PageItem> pageItems = new ArrayList<>();
         
         //Adds all items and their consumers
-        for (PlayerBlueprint blueprint : BlueprintsPlugin.instance.getPlayerBlueprints().stream().filter(blueprint -> blueprint.getOwner().equals(uuid)).collect(Collectors.toList())) {
+        for (PlayerBlueprint blueprint : BlueprintsPlugin.getInstance().getPlayerBlueprints().stream().filter(blueprint -> blueprint.getOwner().equals(uuid)).collect(Collectors.toList())) {
             
             ItemStack item = blueprint.getItem().clone();
             ItemMeta meta = item.getItemMeta();
@@ -215,7 +202,7 @@ public class PlayerBlueprint extends Blueprint {
                 p.getInventory().addItem(blueprint.getItem());
                 p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_COW_BELL, 0.5F, 2F);
             }, ClickType.LEFT);
-            pageItem.setClickAction(p -> new PlayerBlueprintRemoveGUI(p, blueprint).display(p), ClickType.SHIFT_LEFT);
+            pageItem.setClickAction(p -> BlueprintsPlugin.getInstance().getPlayerBlueprintRemoveGUI().display(p, blueprint), ClickType.SHIFT_LEFT);
             
             pageItems.add(pageItem);
         }
@@ -224,7 +211,7 @@ public class PlayerBlueprint extends Blueprint {
     }
     
     public static int getAmount(Player player) {
-        return (int) BlueprintsPlugin.instance.getPlayerBlueprints().stream().filter(b -> b.getOwner().equals(player.getUniqueId())).count();
+        return (int) BlueprintsPlugin.getInstance().getPlayerBlueprints().stream().filter(b -> b.getOwner().equals(player.getUniqueId())).count();
     }
     
     public static int getLimit(Player player) {

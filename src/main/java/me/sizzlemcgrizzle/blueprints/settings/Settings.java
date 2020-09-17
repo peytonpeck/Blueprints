@@ -3,10 +3,11 @@ package me.sizzlemcgrizzle.blueprints.settings;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.permissions.Permission;
-import org.mineacademy.fo.collection.StrictList;
+import org.mineacademy.fo.remain.CompMaterial;
 import org.mineacademy.fo.settings.SimpleSettings;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Settings extends SimpleSettings {
     @Override
@@ -77,7 +78,7 @@ public class Settings extends SimpleSettings {
         public static Boolean SHOW_ERROR_PREVIEW;
         public static Integer BLOCK_TIMEOUT;
         public static Material ERROR_BLOCK;
-        public static StrictList<Material> IGNORE_BLOCKS;
+        public static List<Material> IGNORE_BLOCKS;
         public static Boolean NO_PLACE_OUTSIDE_CLAIMS;
         public static Boolean NO_PLACE_BLOCK_IN_WAY;
         public static Boolean NO_PLACE_ADMIN_CLAIM;
@@ -89,7 +90,7 @@ public class Settings extends SimpleSettings {
             SHOW_ERROR_PREVIEW = getBoolean("Show_Error_Preview");
             BLOCK_TIMEOUT = getInteger("Block_Timeout");
             ERROR_BLOCK = Material.getMaterial(getString("Error_Block"));
-            IGNORE_BLOCKS = getMaterialList("Ignore_Blocks");
+            IGNORE_BLOCKS = getMaterialList("Ignore_Blocks").getSource().stream().map(CompMaterial::getMaterial).collect(Collectors.toList());
             NO_PLACE_OUTSIDE_CLAIMS = getBoolean("No_Place_Outside_Claims");
             NO_PLACE_BLOCK_IN_WAY = getBoolean("No_Place_Block_In_Way");
             NO_PLACE_ADMIN_CLAIM = getBoolean("No_Place_Admin_Claim");

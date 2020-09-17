@@ -48,8 +48,8 @@ public class BlueprintListener implements Listener {
         if (player.getInventory().getItemInMainHand() == null || player.getInventory().getItemInMainHand().getType() != Material.AIR)
             return;
         
-        if (!BlueprintsPlugin.instance.getCreationSessions().containsKey(player)) {
-            player.removeMetadata("blueprint_create", BlueprintsPlugin.instance);
+        if (!BlueprintsPlugin.getInstance().getCreationSessions().containsKey(player)) {
+            player.removeMetadata("blueprint_create", BlueprintsPlugin.getInstance());
             return;
         }
         
@@ -63,7 +63,7 @@ public class BlueprintListener implements Listener {
             return;
         }
         
-        BlueprintCreationSession session = BlueprintsPlugin.instance.getCreationSession(player);
+        BlueprintCreationSession session = BlueprintsPlugin.getInstance().getCreationSession(player);
         
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK)
             session.setPosition2(event.getClickedBlock().getLocation().clone());
@@ -72,13 +72,13 @@ public class BlueprintListener implements Listener {
         
         player.playSound(player.getLocation(), CompSound.NOTE_PLING.getSound(), 1F, 2F);
         interactCooldown.add(player.getUniqueId());
-        new LambdaRunnable(() -> interactCooldown.remove(player.getUniqueId())).runTaskLater(BlueprintsPlugin.instance, 3);
+        new LambdaRunnable(() -> interactCooldown.remove(player.getUniqueId())).runTaskLater(BlueprintsPlugin.getInstance(), 3);
     }
     
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void buildBlueprint(final BlockPlaceEvent event) {
         final Player player = event.getPlayer();
-        final ItemStack item = event.getItemInHand().clone();
+        final ItemStack item = player.getInventory().getItemInMainHand().clone();
         final Block block = event.getBlockPlaced();
         final Location blockLocation = event.getBlockPlaced().getLocation();
         final World world = blockLocation.getWorld();
@@ -88,7 +88,7 @@ public class BlueprintListener implements Listener {
         if (item.getItemMeta() == null || !item.getItemMeta().hasDisplayName())
             return;
         
-        Optional<Blueprint> optional = BlueprintsPlugin.instance.getBlueprints().stream().filter(b -> b.getItem().isSimilar(item)).findFirst();
+        Optional<Blueprint> optional = BlueprintsPlugin.getInstance().getBlueprints().stream().filter(b -> b.getItem().isSimilar(item)).findFirst();
         
         if (!optional.isPresent())
             return;
@@ -140,22 +140,22 @@ public class BlueprintListener implements Listener {
     public void onPlayerLogout(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         
-        if (BlueprintsPlugin.instance.getLink(player).isPresent())
-            BlueprintsPlugin.instance.removeInventoryLink(player);
+        if (BlueprintsPlugin.getInstance().getLink(player).isPresent())
+            BlueprintsPlugin.getInstance().removeInventoryLink(player);
         
-        if (player.hasMetadata("blueprint_create") && BlueprintsPlugin.instance.getCreationSessions().containsKey(player))
-            BlueprintsPlugin.instance.removeCreationSession(player);
+        if (player.hasMetadata("blueprint_create") && BlueprintsPlugin.getInstance().getCreationSessions().containsKey(player))
+            BlueprintsPlugin.getInstance().removeCreationSession(player);
     }
     
     @EventHandler(ignoreCancelled = true)
     public void onPlayerLogin(PlayerLoginEvent event) {
         Player player = event.getPlayer();
         
-        if (!player.hasMetadata("blueprint_create") && !BlueprintsPlugin.instance.getCreationSessions().containsKey(player))
+        if (!player.hasMetadata("blueprint_create") && !BlueprintsPlugin.getInstance().getCreationSessions().containsKey(player))
             return;
         
-        if (!BlueprintsPlugin.instance.getCreationSessions().containsKey(player)) {
-            player.removeMetadata("blueprint_create", BlueprintsPlugin.instance);
+        if (!BlueprintsPlugin.getInstance().getCreationSessions().containsKey(player)) {
+            player.removeMetadata("blueprint_create", BlueprintsPlugin.getInstance());
             Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "Your blueprint creation session has been cancelled due to you logging out.");
         }
     }
@@ -168,7 +168,7 @@ public class BlueprintListener implements Listener {
         if (block.getType() != Material.BARREL && block.getType() != Material.SHULKER_BOX)
             return;
         
-        Optional<InventoryLink> optional = BlueprintsPlugin.instance.getLink(player);
+        Optional<InventoryLink> optional = BlueprintsPlugin.getInstance().getLink(player);
         
         if (!optional.isPresent())
             return;

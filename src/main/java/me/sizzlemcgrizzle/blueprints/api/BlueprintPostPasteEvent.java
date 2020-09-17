@@ -23,8 +23,9 @@ public class BlueprintPostPasteEvent extends Event {
     private ItemStack item;
     private Location location;
     private List<Location> pasteSet;
+    private boolean isPlayerBlueprint;
     
-    public BlueprintPostPasteEvent(String type, Player player, String schematic, GameMode gamemode, ItemStack item, Location location, List<Location> set) {
+    public BlueprintPostPasteEvent(String type, Player player, String schematic, GameMode gamemode, ItemStack item, Location location, List<Location> set, boolean isPlayerBlueprint) {
         this.type = type;
         this.player = player;
         this.schematic = schematic;
@@ -32,6 +33,7 @@ public class BlueprintPostPasteEvent extends Event {
         this.item = item;
         this.location = location;
         this.pasteSet = set;
+        this.isPlayerBlueprint = isPlayerBlueprint;
     }
     
     @Override
@@ -92,5 +94,9 @@ public class BlueprintPostPasteEvent extends Event {
      */
     public List<Location> getBlocksPasted() {
         return pasteSet;
+    }
+    
+    public boolean isPlayerBlueprint() {
+        return isPlayerBlueprint;
     }
 }

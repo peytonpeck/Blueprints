@@ -13,7 +13,7 @@ import java.util.List;
 
 public class BlueprintsAddCommand extends SimpleSubCommand {
     
-    private BlueprintsPlugin blueprintsPlugin = BlueprintsPlugin.instance;
+    private BlueprintsPlugin blueprintsPlugin = BlueprintsPlugin.getInstance();
     
     private static String notSpecial = Settings.Messages.MESSAGE_PREFIX + "&cThe block you are holding does not have a special name, and this is dangerous!";
     
@@ -45,7 +45,7 @@ public class BlueprintsAddCommand extends SimpleSubCommand {
         
         if (SchematicUtil.getSchematics().contains(args[0])) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&7You successfully added a blueprint with name " + blueprint.getItemMeta().getDisplayName() + " &7calling schematic &d" + args[0]);
-            BlueprintsPlugin.instance.addBlueprint(new Blueprint(blueprint.clone(), args[0], args.length > 1 ? args[1] : null));
+            BlueprintsPlugin.getInstance().addBlueprint(new Blueprint(blueprint.clone(), args[0], args.length > 1 ? args[1] : null));
         } else
             tell(Settings.Messages.MESSAGE_PREFIX + "&cThere is no such file '&4" + args[0] + "&c'. Please add the schematic to the Schematics folder.");
         
