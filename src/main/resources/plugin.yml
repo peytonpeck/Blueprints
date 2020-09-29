@@ -22,9 +22,13 @@ permissions:
     default: op
   blueprints.addtype:
     default: op
+  blueprintsrewards.admin:
+    default: op
 commands:
   blueprints:
     description: Main blueprints command group
   blueprint:
     description: Command to create a player blueprint
+  blueprintsreward:
+    description: Command to manage blueprints rewards
 

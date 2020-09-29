@@ -1,6 +1,5 @@
 package me.sizzlemcgrizzle.blueprints.util;
 
-import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.placement.Blueprint;
 import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
@@ -10,6 +9,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,18 +35,11 @@ public class SchematicUtil {
     }
     
     public static List<String> getSchematics() {
-        WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
-        File newFile = new File(worldEditPlugin.getDataFolder() + File.separator + "schematics");
+        File newFile = new File(Bukkit.getPluginManager().getPlugin("WorldEdit").getDataFolder(), "schematics");
         
-        List<String> list = new ArrayList<>();
-        
-        if (!newFile.exists() || newFile.listFiles() == null) {
-            return list;
-        }
-        
-        for (File file : newFile.listFiles())
-            list.add(file.getName());
-        return list;
+        return !newFile.exists() || newFile.listFiles() == null
+                ? new ArrayList<>()
+                : Arrays.stream(newFile.listFiles()).map(File::getName).collect(Collectors.toList());
     }
     
     public static List<ItemStack> getBlueprint(String schematic) {

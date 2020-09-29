@@ -128,12 +128,13 @@ public class BlueprintListener implements Listener {
     
     @EventHandler(ignoreCancelled = true)
     public void onBlueprintPaste(BlueprintPostPasteEvent event) {
-        if (!event.getType().equalsIgnoreCase("SHIP"))
-            return;
+        if (event.getType().equalsIgnoreCase("SHIP")) {
+            event.getBlocksPasted().stream()
+                    .filter(location -> location.getBlock().getType() == Material.BARRIER)
+                    .forEach(location -> location.getBlock().setType(Material.AIR));
+        }
         
-        event.getBlocksPasted().stream()
-                .filter(location -> location.getBlock().getType() == Material.BARRIER)
-                .forEach(location -> location.getBlock().setType(Material.AIR));
+        BlueprintsPlugin.getInstance().getRewards().stream().filter(r -> r.getBaseSchematic().equals(event.getSchematic())).forEach(r -> r.reward(event.getPlayer()));
     }
     
     @EventHandler(ignoreCancelled = true)

@@ -9,12 +9,14 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandGroup;
+import me.sizzlemcgrizzle.blueprints.command.BlueprintsRewardCommandGroup;
 import me.sizzlemcgrizzle.blueprints.command.PlayerBlueprintCommandGroup;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMenu;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintRemoveGUI;
 import me.sizzlemcgrizzle.blueprints.placement.Blueprint;
 import me.sizzlemcgrizzle.blueprints.placement.BlueprintCreationSession;
 import me.sizzlemcgrizzle.blueprints.placement.BlueprintListener;
+import me.sizzlemcgrizzle.blueprints.placement.BlueprintsReward;
 import me.sizzlemcgrizzle.blueprints.placement.InventoryLink;
 import me.sizzlemcgrizzle.blueprints.placement.MaterialContainer;
 import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
@@ -60,6 +62,7 @@ public class BlueprintsPlugin extends SimplePlugin {
     private List<Blueprint> blueprints;
     private List<InventoryLink> inventoryLinks = new ArrayList<>();
     private List<PlayerBlueprintMenu> playerBlueprintListGUIs = new ArrayList<>();
+    private List<BlueprintsReward> rewards;
     
     private Map<Player, BlueprintCreationSession> creationSessions = new HashMap<>();
     
@@ -68,6 +71,7 @@ public class BlueprintsPlugin extends SimplePlugin {
         ConfigurationSerialization.registerClass(Blueprint.class);
         ConfigurationSerialization.registerClass(PlayerBlueprint.class);
         ConfigurationSerialization.registerClass(MaterialContainer.class);
+        ConfigurationSerialization.registerClass(BlueprintsReward.class);
         
         instance = this;
         
@@ -79,6 +83,7 @@ public class BlueprintsPlugin extends SimplePlugin {
         registerEvents(new BlueprintListener());
         registerCommands("blueprints", new BlueprintsCommandGroup());
         registerCommands("blueprint", Collections.singletonList("playerblueprint"), new PlayerBlueprintCommandGroup());
+        registerCommands("blueprintsreward", new BlueprintsRewardCommandGroup());
         
         bossBar = getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SOLID, BarFlag.CREATE_FOG);
         playerBlueprintRemoveGUI = new PlayerBlueprintRemoveGUI();
@@ -146,11 +151,7 @@ public class BlueprintsPlugin extends SimplePlugin {
         YamlConfiguration config = YamlConfiguration.loadConfiguration(blueprintFile);
         blueprints = (List<Blueprint>) config.getList("blueprints", new ArrayList<>());
         blueprints.addAll((List<PlayerBlueprint>) config.getList("playerBlueprints", new ArrayList<>()));
-        config.getKeys(false).stream().filter(key -> !key.equalsIgnoreCase("blueprints") && !key.equalsIgnoreCase("playerBlueprints"))
-                .forEach(key -> addBlueprint(new Blueprint(
-                        config.getConfigurationSection(key).getItemStack("Blueprint"),
-                        config.getConfigurationSection(key).getString("Schematic"),
-                        config.getConfigurationSection(key).getString("Type", "NORMAL"))));
+        rewards = (List<BlueprintsReward>) config.getList("rewards", new ArrayList<>());
     }
     
     private void saveBlueprints() {
@@ -162,6 +163,7 @@ public class BlueprintsPlugin extends SimplePlugin {
         config.getKeys(false).forEach(key -> config.set(key, null));
         config.set("blueprints", blueprints.stream().filter(blueprint -> blueprint != null && !(blueprint instanceof PlayerBlueprint)).collect(Collectors.toList()));
         config.set("playerBlueprints", blueprints.stream().filter(blueprint -> blueprint instanceof PlayerBlueprint).collect(Collectors.toList()));
+        config.set("rewards", rewards);
         
         try {
             config.save(blueprintFile);
@@ -263,6 +265,22 @@ public class BlueprintsPlugin extends SimplePlugin {
     
     public void addPlayerBlueprintListGUI(PlayerBlueprintMenu gui) {
         playerBlueprintListGUIs.add(gui);
+    }
+    
+    public List<BlueprintsReward> getRewards() {
+        return rewards;
+    }
+    
+    public void addReward(BlueprintsReward reward) {
+        rewards.add(reward);
+    }
+    
+    public void removeReward(BlueprintsReward reward) {
+        rewards.remove(reward);
+    }
+    
+    public Optional<BlueprintsReward> getReward(String id) {
+        return rewards.stream().filter(r -> r.getId().equals(id)).findFirst();
     }
     
     @Override
