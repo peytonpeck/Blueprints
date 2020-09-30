@@ -45,8 +45,8 @@ public class PlayerBlueprintCompleteCommand extends SimpleSubCommand {
         BlueprintCreationSession session = BlueprintsPlugin.getInstance().getCreationSession(player);
         
         int area = (int) session.getArea();
-        if (area > Settings.PLAYER_BLUEPRINT_MAX_SIZE) {
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cThe size of this blueprint is too big! Your size: &6" + area + "&c, maximum size: &a" + Settings.PLAYER_BLUEPRINT_MAX_SIZE + "&c.");
+        if (area > Settings.PlayerBlueprint.PLAYER_BLUEPRINT_MAX_SIZE) {
+            tell(Settings.Messages.MESSAGE_PREFIX + "&cThe size of this blueprint is too big! Your size: &6" + area + "&c, maximum size: &a" + Settings.PlayerBlueprint.PLAYER_BLUEPRINT_MAX_SIZE + "&c.");
             return;
         }
         

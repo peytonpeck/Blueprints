@@ -2,11 +2,14 @@ package me.sizzlemcgrizzle.blueprints.settings;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.permissions.Permission;
 import org.mineacademy.fo.remain.CompMaterial;
 import org.mineacademy.fo.settings.SimpleSettings;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Settings extends SimpleSettings {
@@ -29,23 +32,13 @@ public class Settings extends SimpleSettings {
     
     public static Boolean PLAY_SOUNDS;
     public static List<String> TYPES;
-    public static List<String> LIMITS;
-    public static Integer PLAYER_BLUEPRINT_MAX_SIZE;
     public static Boolean USE_ECONOMY;
-    public static Double PLAYER_BLUEPRINT_PRICE_MODIFIER;
     
     private static void init() {
         pathPrefix(null);
         PLAY_SOUNDS = getBoolean("Play_Sounds");
         TYPES = getStringList("Blueprint_Types");
-        LIMITS = getStringList("Player_Blueprint_Limits");
-        LIMITS.forEach(limit -> {
-            if (Bukkit.getPluginManager().getPermission(limit) == null)
-                Bukkit.getPluginManager().addPermission(new Permission(limit));
-        });
-        PLAYER_BLUEPRINT_MAX_SIZE = getInteger("Player_Blueprint_Max_Size");
         USE_ECONOMY = getBoolean("Use_Economy");
-        PLAYER_BLUEPRINT_PRICE_MODIFIER = getDouble("Player_Blueprint_Price_Multiplier");
     }
     
     public static class Messages {
@@ -72,6 +65,29 @@ public class Settings extends SimpleSettings {
             ABOVE_Y_255 = getString("Above_Y_255");
         }
         
+    }
+    
+    public static class PlayerBlueprint {
+        public static List<String> LIMITS;
+        public static Integer PLAYER_BLUEPRINT_MAX_SIZE;
+        public static Double PLAYER_BLUEPRINT_PRICE_MULTIPLIER;
+        public static Map<Material, Double> PLAYER_BLUEPRINT_MATERIAL_PRICE_MULTIPLIER;
+        
+        private static void init() {
+            pathPrefix("Player_Blueprint");
+            
+            LIMITS = getStringList("Player_Blueprint_Limits");
+            LIMITS.forEach(limit -> {
+                if (Bukkit.getPluginManager().getPermission(limit) == null)
+                    Bukkit.getPluginManager().addPermission(new Permission(limit));
+            });
+            PLAYER_BLUEPRINT_MAX_SIZE = getInteger("Player_Blueprint_Max_Size");
+            PLAYER_BLUEPRINT_PRICE_MULTIPLIER = getDouble("Player_Blueprint_Price_Multiplier");
+            ConfigurationSection section = getConfig().getConfigurationSection("Player_Blueprint").getConfigurationSection("Player_Blueprint_Material_Price_Multiplier");
+            PLAYER_BLUEPRINT_MATERIAL_PRICE_MULTIPLIER = new HashMap<>();
+            for (String key : section.getKeys(false))
+                PLAYER_BLUEPRINT_MATERIAL_PRICE_MULTIPLIER.put(Material.valueOf(key), section.getDouble(key));
+        }
     }
     
     public static class Block {

@@ -217,11 +217,11 @@ public class PlayerBlueprint extends Blueprint {
     public static int getLimit(Player player) {
         int limit = -1;
         
-        for (String l : Settings.LIMITS) {
+        for (String l : Settings.PlayerBlueprint.LIMITS) {
             if (!player.hasPermission(l))
                 continue;
             
-            int num = Integer.parseInt(l.split("blueprint.placement.")[1]);
+            int num = Integer.parseInt(l.split("blueprints.placement.")[1]);
             
             if (num == -1)
                 return -1;

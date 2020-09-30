@@ -58,8 +58,14 @@ public class MaterialContainer implements ConfigurationSerializable {
     
     public double getCost() {
         double cost = 0.0;
-        for (Integer integer : materialMap.values())
-            cost += Settings.PLAYER_BLUEPRINT_PRICE_MODIFIER * integer;
+        for (Map.Entry<Material, Integer> entry : materialMap.entrySet()) {
+            Material material = entry.getKey();
+            int amount = entry.getValue();
+            double multiplier = Settings.PlayerBlueprint.PLAYER_BLUEPRINT_MATERIAL_PRICE_MULTIPLIER.getOrDefault(material, Settings.PlayerBlueprint.PLAYER_BLUEPRINT_PRICE_MULTIPLIER);
+            
+            cost += multiplier * amount;
+        }
+        
         return cost;
     }
     
