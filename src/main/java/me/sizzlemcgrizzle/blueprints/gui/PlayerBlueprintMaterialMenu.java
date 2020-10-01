@@ -5,6 +5,7 @@ import de.craftlancer.core.gui.NavigationItem;
 import de.craftlancer.core.gui.PageItem;
 import de.craftlancer.core.gui.PagedListGUIInventory;
 import de.craftlancer.core.util.ItemBuilder;
+import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -22,7 +23,7 @@ public class PlayerBlueprintMaterialMenu extends PagedListGUIInventory {
         setInfoItem(makeInfoItem());
         
         NavigationItem navigationItem = new NavigationItem(Utils.buildItemStack(Material.ENDER_EYE, ChatColor.GOLD + "Back to Main Page", Collections.emptyList()), -1);
-        navigationItem.setClickAction(menu::display);
+        navigationItem.setClickAction(player -> BlueprintsPlugin.getInstance().getPlayerBlueprintListGUIFor(player.getUniqueId()));
         
         addNavigationItem(navigationItem);
     }
