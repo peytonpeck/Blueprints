@@ -17,13 +17,13 @@ import java.util.Collections;
 import java.util.List;
 
 public class PlayerBlueprintMaterialMenu extends PagedListGUIInventory {
-    public PlayerBlueprintMaterialMenu(@Nonnull Plugin plugin, @Nullable String title, boolean useBorders, int rows, @Nonnull List<PageItem> pageItems, boolean playSounds, PlayerBlueprintMenu menu) {
+    public PlayerBlueprintMaterialMenu(@Nonnull Plugin plugin, @Nullable String title, boolean useBorders, int rows, @Nonnull List<PageItem> pageItems, boolean playSounds) {
         super(plugin, title, useBorders, rows, pageItems, playSounds);
         
         setInfoItem(makeInfoItem());
         
         NavigationItem navigationItem = new NavigationItem(Utils.buildItemStack(Material.ENDER_EYE, ChatColor.GOLD + "Back to Main Page", Collections.emptyList()), -1);
-        navigationItem.setClickAction(player -> BlueprintsPlugin.getInstance().getPlayerBlueprintListGUIFor(player.getUniqueId()));
+        navigationItem.setClickAction(player -> BlueprintsPlugin.getInstance().getPlayerBlueprintMenu(player.getUniqueId()).display(player));
         
         addNavigationItem(navigationItem);
     }

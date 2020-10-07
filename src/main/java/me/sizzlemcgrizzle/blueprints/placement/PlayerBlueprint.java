@@ -5,11 +5,10 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
 import com.sk89q.worldedit.session.ClipboardHolder;
-import de.craftlancer.core.Utils;
 import de.craftlancer.core.gui.PageItem;
+import de.craftlancer.core.util.ItemBuilder;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMaterialMenu;
-import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMenu;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
@@ -19,19 +18,15 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.mineacademy.fo.Common;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class PlayerBlueprint extends Blueprint {
     
@@ -104,21 +99,7 @@ public class PlayerBlueprint extends Blueprint {
         UUID player = owner;
         owner = UUID.randomUUID();
         //Dealing with player blueprint guis and updating them
-        Optional<PlayerBlueprintMenu> optional = BlueprintsPlugin.getInstance().getPlayerBlueprintListGUIFor(player);
-        if (optional.isPresent()) {
-            optional.get().setPageItems(PlayerBlueprint.getPageItems(player));
-        } else {
-            PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.getInstance(),
-                    ChatColor.DARK_PURPLE + Bukkit.getOfflinePlayer(owner).getName() + "'s Player Blueprints",
-                    true,
-                    6,
-                    PlayerBlueprint.getPageItems(player),
-                    true,
-                    player);
-            
-            BlueprintsPlugin.getInstance().addPlayerBlueprintListGUI(gui);
-        }
-        
+        BlueprintsPlugin.getInstance().getPlayerBlueprintMenu(player).setPageItems(PlayerBlueprint.getPageItems(player));
     }
     
     private boolean charge(Player player) {
@@ -141,21 +122,12 @@ public class PlayerBlueprint extends Blueprint {
     private void setMaterialGUI() {
         List<PageItem> pageItems = new ArrayList<>();
         
-        PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.getInstance(),
-                org.bukkit.ChatColor.DARK_PURPLE + Bukkit.getOfflinePlayer(owner).getName() + "'s Player Blueprints",
-                true,
-                6,
-                PlayerBlueprint.getPageItems(owner),
-                true,
-                owner);
-        
-        BlueprintsPlugin.getInstance().addPlayerBlueprintListGUI(gui);
-        
         for (Map.Entry<Material, Integer> entry : getMaterialMap().entrySet()) {
-            String name = ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "ITEM: " + ChatColor.AQUA + entry.getKey().name().toLowerCase().replace('_', ' ');
-            List<String> lore = Arrays.asList("", ChatColor.GRAY + "Amount needed: " + ChatColor.GREEN + entry.getValue());
-            ItemStack item = Utils.buildItemStack(entry.getKey(), name, lore);
-            item.setAmount(Math.min(item.getMaxStackSize(), entry.getValue()));
+            
+            ItemStack item = new ItemBuilder(entry.getKey())
+                    .setDisplayName(ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "ITEM: " + ChatColor.AQUA + entry.getKey().name().toLowerCase().replace('_', ' '))
+                    .setLore("", ChatColor.GRAY + "Amount needed: " + ChatColor.GREEN + entry.getValue())
+                    .setAmount(Math.min(entry.getKey().getMaxStackSize(), entry.getValue())).build();
             
             pageItems.add(new PageItem(item));
         }
@@ -165,8 +137,8 @@ public class PlayerBlueprint extends Blueprint {
                 true,
                 6,
                 pageItems,
-                true,
-                gui);
+                true
+        );
     }
     
     public PlayerBlueprintMaterialMenu getMaterialGUI() {
@@ -180,18 +152,13 @@ public class PlayerBlueprint extends Blueprint {
         List<PageItem> pageItems = new ArrayList<>();
         
         //Adds all items and their consumers
-        for (PlayerBlueprint blueprint : BlueprintsPlugin.getInstance().getPlayerBlueprints().stream().filter(blueprint -> blueprint.getOwner().equals(uuid)).collect(Collectors.toList())) {
+        BlueprintsPlugin.getInstance().getPlayerBlueprints().stream().filter(blueprint -> blueprint.getOwner().equals(uuid)).forEach(blueprint -> {
             
-            ItemStack item = blueprint.getItem().clone();
-            ItemMeta meta = item.getItemMeta();
-            List<String> lore = meta.getLore();
-            
-            lore.add("");
-            lore.add(ChatColor.AQUA + "Left click" + ChatColor.GRAY + " to " + ChatColor.GREEN + "buy" + ChatColor.GRAY + " item for " + ChatColor.GREEN + "$" + blueprint.getCost() + ChatColor.GRAY + ".");
-            lore.add(ChatColor.AQUA + "Right click" + ChatColor.GRAY + " to " + ChatColor.LIGHT_PURPLE + "open" + ChatColor.GRAY + " material list.");
-            lore.add(ChatColor.AQUA + "Shift left click" + ChatColor.GRAY + " to " + ChatColor.RED + "remove" + ChatColor.GRAY + " blueprint.");
-            meta.setLore(lore);
-            item.setItemMeta(meta);
+            ItemStack item = new ItemBuilder(blueprint.getItem()).addLore(
+                    "",
+                    ChatColor.AQUA + "Left click" + ChatColor.GRAY + " to " + ChatColor.GREEN + "buy" + ChatColor.GRAY + " item for " + ChatColor.GREEN + "$" + blueprint.getCost() + ChatColor.GRAY + ".",
+                    ChatColor.AQUA + "Right click" + ChatColor.GRAY + " to " + ChatColor.LIGHT_PURPLE + "open" + ChatColor.GRAY + " material list.",
+                    ChatColor.AQUA + "Shift left click" + ChatColor.GRAY + " to " + ChatColor.RED + "remove" + ChatColor.GRAY + " blueprint.").build();
             
             PageItem pageItem = new PageItem(item);
             
@@ -205,7 +172,7 @@ public class PlayerBlueprint extends Blueprint {
             pageItem.setClickAction(p -> BlueprintsPlugin.getInstance().getPlayerBlueprintRemoveGUI().display(p, blueprint), ClickType.SHIFT_LEFT);
             
             pageItems.add(pageItem);
-        }
+        });
         
         return pageItems;
     }

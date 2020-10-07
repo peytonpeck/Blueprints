@@ -14,13 +14,18 @@ public class InventoryLink {
     private List<Inventory> inventories = new ArrayList<>();
     
     public InventoryLink(Player owner) {
-        
         this.owner = owner;
     }
     
     public void take(Material material, int amount) {
-        inventories.removeIf(inventory -> inventory.getLocation().getBlock().getType() != Material.SHULKER_BOX && inventory.getLocation().getBlock().getType() != Material.BARREL);
-        for (Inventory inventory : inventories) {
+        inventories.removeIf(inventory ->
+                inventory == null
+                        || inventory.getLocation() == null
+                        || (!inventory.getLocation().getBlock().getType().name().contains("SHULKER_BOX")
+                        && inventory.getLocation().getBlock().getType() != Material.BARREL));
+        List<Inventory> copy = inventories;
+        copy.add(owner.getInventory());
+        for (Inventory inventory : copy) {
             for (int i = 0; i < inventory.getSize(); i++) {
                 ItemStack item = inventory.getItem(i);
                 if (item != null && item.getType() == material) {
@@ -39,8 +44,14 @@ public class InventoryLink {
     }
     
     public boolean contains(Material material, int amount) {
-        inventories.removeIf(inventory -> inventory.getLocation().getBlock().getType() != Material.SHULKER_BOX && inventory.getLocation().getBlock().getType() != Material.BARREL);
-        for (Inventory inventory : inventories) {
+        inventories.removeIf(inventory ->
+                inventory == null
+                        || inventory.getLocation() == null
+                        || (!inventory.getLocation().getBlock().getType().name().contains("SHULKER_BOX")
+                        && inventory.getLocation().getBlock().getType() != Material.BARREL));
+        List<Inventory> copy = inventories;
+        copy.add(owner.getInventory());
+        for (Inventory inventory : copy) {
             for (ItemStack item : inventory.getContents()) {
                 if (item == null)
                     continue;

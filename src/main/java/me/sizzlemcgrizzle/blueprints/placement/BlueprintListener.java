@@ -141,8 +141,7 @@ public class BlueprintListener implements Listener {
     public void onPlayerLogout(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         
-        if (BlueprintsPlugin.getInstance().getLink(player).isPresent())
-            BlueprintsPlugin.getInstance().removeInventoryLink(player);
+        BlueprintsPlugin.getInstance().getLink(player).ifPresent(l -> BlueprintsPlugin.getInstance().removeInventoryLink(player));
         
         if (player.hasMetadata("blueprint_create") && BlueprintsPlugin.getInstance().getCreationSessions().containsKey(player))
             BlueprintsPlugin.getInstance().removeCreationSession(player);
@@ -151,6 +150,9 @@ public class BlueprintListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onPlayerLogin(PlayerLoginEvent event) {
         Player player = event.getPlayer();
+        
+        if (!BlueprintsPlugin.getInstance().getLink(player).isPresent())
+            BlueprintsPlugin.getInstance().addInventoryLink(new InventoryLink(player));
         
         if (!player.hasMetadata("blueprint_create") && !BlueprintsPlugin.getInstance().getCreationSessions().containsKey(player))
             return;
@@ -166,7 +168,7 @@ public class BlueprintListener implements Listener {
         Block block = event.getBlock();
         Player player = event.getPlayer();
         
-        if (block.getType() != Material.BARREL && block.getType() != Material.SHULKER_BOX)
+        if (block.getType() != Material.BARREL && !block.getType().name().contains("SHULKER_BOX"))
             return;
         
         Optional<InventoryLink> optional = BlueprintsPlugin.getInstance().getLink(player);
@@ -175,7 +177,7 @@ public class BlueprintListener implements Listener {
             return;
         
         Inventory inventory;
-        if (block.getType() == Material.SHULKER_BOX)
+        if (block.getType().name().contains("SHULKER_BOX"))
             inventory = ((ShulkerBox) block.getState()).getInventory();
         else
             inventory = ((Barrel) block.getState()).getInventory();

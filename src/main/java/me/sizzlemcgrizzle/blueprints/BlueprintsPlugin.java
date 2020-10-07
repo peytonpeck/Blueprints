@@ -22,7 +22,6 @@ import me.sizzlemcgrizzle.blueprints.placement.MaterialContainer;
 import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import net.milkbowl.vault.economy.Economy;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.boss.BarColor;
@@ -61,7 +60,7 @@ public class BlueprintsPlugin extends SimplePlugin {
     
     private List<Blueprint> blueprints;
     private List<InventoryLink> inventoryLinks = new ArrayList<>();
-    private List<PlayerBlueprintMenu> playerBlueprintListGUIs = new ArrayList<>();
+    private List<PlayerBlueprintMenu> playerBlueprintMenus = new ArrayList<>();
     private List<BlueprintsReward> rewards;
     
     private Map<Player, BlueprintCreationSession> creationSessions = new HashMap<>();
@@ -196,21 +195,7 @@ public class BlueprintsPlugin extends SimplePlugin {
         //Dealing with player blueprint guis and updating them
         UUID owner = ((PlayerBlueprint) blueprint).getOwner();
         
-        Optional<PlayerBlueprintMenu> optional = getPlayerBlueprintListGUIFor(owner);
-        if (optional.isPresent()) {
-            optional.get().setPageItems(PlayerBlueprint.getPageItems(((PlayerBlueprint) blueprint).getOwner()));
-            optional.get().reload();
-        } else {
-            PlayerBlueprintMenu gui = new PlayerBlueprintMenu(BlueprintsPlugin.getInstance(),
-                    ChatColor.DARK_PURPLE + Bukkit.getOfflinePlayer(owner).getName() + "'s Player Blueprints",
-                    true,
-                    6,
-                    PlayerBlueprint.getPageItems(owner),
-                    true,
-                    owner);
-            
-            BlueprintsPlugin.getInstance().addPlayerBlueprintListGUI(gui);
-        }
+        getPlayerBlueprintMenu(owner).reload();
     }
     
     public void removeBlueprint(Blueprint blueprint) {
@@ -243,10 +228,6 @@ public class BlueprintsPlugin extends SimplePlugin {
         return creationSessions.get(player);
     }
     
-    public List<InventoryLink> getInventoryLinks() {
-        return inventoryLinks;
-    }
-    
     public void removeInventoryLink(Player player) {
         inventoryLinks.removeIf(link -> link.getOwner().equals(player));
     }
@@ -259,12 +240,15 @@ public class BlueprintsPlugin extends SimplePlugin {
         return inventoryLinks.stream().filter(link -> link.getOwner().equals(player)).findFirst();
     }
     
-    public Optional<PlayerBlueprintMenu> getPlayerBlueprintListGUIFor(UUID player) {
-        return playerBlueprintListGUIs.stream().filter(gui -> gui.getOwner().equals(player)).findFirst();
-    }
-    
-    public void addPlayerBlueprintListGUI(PlayerBlueprintMenu gui) {
-        playerBlueprintListGUIs.add(gui);
+    public PlayerBlueprintMenu getPlayerBlueprintMenu(UUID uuid) {
+        Optional<PlayerBlueprintMenu> optional = playerBlueprintMenus.stream().filter(gui -> gui.getOwner().equals(uuid)).findFirst();
+        
+        if (optional.isPresent())
+            return optional.get();
+        
+        PlayerBlueprintMenu menu = new PlayerBlueprintMenu(uuid);
+        playerBlueprintMenus.add(menu);
+        return menu;
     }
     
     public List<BlueprintsReward> getRewards() {

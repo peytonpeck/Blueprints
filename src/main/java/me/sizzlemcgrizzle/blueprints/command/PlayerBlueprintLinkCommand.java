@@ -29,7 +29,7 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
     @Override
     protected List<String> tabComplete() {
         if (args.length == 1)
-            return completeLastWord(Arrays.asList("create", "add", "remove", "removeLink"));
+            return completeLastWord(Arrays.asList("add", "remove"));
         return Collections.emptyList();
     }
     
@@ -40,24 +40,10 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
         
         if (args[0].equalsIgnoreCase("add"))
             add(player);
-        else if (args[0].equalsIgnoreCase("create"))
-            create(player);
         else if (args[0].equalsIgnoreCase("remove"))
             remove(player);
-        else if (args[0].equalsIgnoreCase("removeLink"))
-            removeLink(player);
         else
             tell(Settings.Messages.MESSAGE_PREFIX + "&cYou must enter a valid argument!");
-    }
-    
-    private void create(Player player) {
-        if (BlueprintsPlugin.getInstance().getLink(player).isPresent()) {
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cYou already have an active link! To remove, &4/playerblueprint link remove&c!");
-            return;
-        }
-        
-        BlueprintsPlugin.getInstance().addInventoryLink(new InventoryLink(player));
-        tell(Settings.Messages.MESSAGE_PREFIX + "&aInventory link successfully created. &3/playerblueprint link add &awhile looking at a barrel or shulker box!");
     }
     
     private void add(Player player) {
@@ -117,15 +103,5 @@ public class PlayerBlueprintLinkCommand extends SimpleSubCommand {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cThis barrel/shulker box is not linked.");
         else
             tell(Settings.Messages.MESSAGE_PREFIX + "&aSuccessfully unlinked inventory!");
-    }
-    
-    private void removeLink(Player player) {
-        if (!BlueprintsPlugin.getInstance().getLink(player).isPresent()) {
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cYou do not have an active link!");
-            return;
-        }
-        
-        BlueprintsPlugin.getInstance().removeInventoryLink(player);
-        tell(Settings.Messages.MESSAGE_PREFIX + "&aInventory link successfully removed.");
     }
 }

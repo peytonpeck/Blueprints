@@ -1,24 +1,27 @@
 package me.sizzlemcgrizzle.blueprints.gui;
 
-import de.craftlancer.core.gui.PageItem;
 import de.craftlancer.core.gui.PagedListGUIInventory;
 import de.craftlancer.core.util.ItemBuilder;
+import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
+import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.List;
 import java.util.UUID;
 
 public class PlayerBlueprintMenu extends PagedListGUIInventory {
     
     private UUID owner;
     
-    public PlayerBlueprintMenu(@Nonnull Plugin plugin, @Nullable String title, boolean useBorders, int rows, @Nonnull List<PageItem> pageItems, boolean playSounds, UUID owner) {
-        super(plugin, title, useBorders, rows, pageItems, playSounds);
+    public PlayerBlueprintMenu(UUID owner) {
+        super(BlueprintsPlugin.getInstance(),
+                ChatColor.DARK_PURPLE + Bukkit.getOfflinePlayer(owner).getName() + "'s Player Blueprints",
+                false,
+                2,
+                PlayerBlueprint.getPageItems(owner),
+                true);
         
         this.owner = owner;
         
