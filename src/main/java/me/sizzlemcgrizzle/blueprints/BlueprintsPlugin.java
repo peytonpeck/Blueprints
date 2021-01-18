@@ -189,17 +189,22 @@ public class BlueprintsPlugin extends SimplePlugin {
     
     public void addBlueprint(Blueprint blueprint) {
         blueprints.add(blueprint);
-        if (!(blueprint instanceof PlayerBlueprint))
-            return;
         
-        //Dealing with player blueprint guis and updating them
-        UUID owner = ((PlayerBlueprint) blueprint).getOwner();
-        
-        getPlayerBlueprintMenu(owner).reload();
+        if (blueprint instanceof PlayerBlueprint)
+            reloadBlueprintMenu(((PlayerBlueprint) blueprint).getOwner());
     }
     
     public void removeBlueprint(Blueprint blueprint) {
         blueprints.remove(blueprint);
+        
+        if (blueprint instanceof PlayerBlueprint)
+            reloadBlueprintMenu(((PlayerBlueprint) blueprint).getOwner());
+    }
+    
+    public void reloadBlueprintMenu(UUID owner) {
+        PlayerBlueprintMenu menu = getPlayerBlueprintMenu(owner);
+        menu.setPageItems(PlayerBlueprint.getPageItems(owner));
+        menu.reload();
     }
     
     public void setBlueprints(List<Blueprint> list) {
