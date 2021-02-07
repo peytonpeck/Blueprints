@@ -1,8 +1,9 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
-import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
-import me.sizzlemcgrizzle.blueprints.placement.BlueprintCreationSession;
+import de.craftlancer.core.clipboard.Clipboard;
+import de.craftlancer.core.clipboard.ClipboardManager;
 import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
+import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprintUtil;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.entity.Player;
 import org.mineacademy.fo.command.SimpleCommandGroup;
@@ -10,6 +11,7 @@ import org.mineacademy.fo.command.SimpleSubCommand;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class PlayerBlueprintCompleteCommand extends SimpleSubCommand {
     
@@ -31,22 +33,23 @@ public class PlayerBlueprintCompleteCommand extends SimpleSubCommand {
     protected void onCommand() {
         checkConsole();
         Player player = getPlayer();
+        Optional<Clipboard> optional = ClipboardManager.getInstance().getClipboard(player.getUniqueId());
         
-        if (!player.hasMetadata("blueprint_create")) {
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cYou are not in a blueprint creation session.");
+        if (!optional.isPresent()) {
+            tell(Settings.Messages.MESSAGE_PREFIX + "&cYou do not have an active clipboard. Use &a/clipboard new &cto create a new clipboard.");
             return;
         }
+        
+        Clipboard clipboard = optional.get();
         
         if (PlayerBlueprint.getLimit(player) != -1 && PlayerBlueprint.getAmount(player) >= PlayerBlueprint.getLimit(player)) {
             tell(Settings.Messages.MESSAGE_PREFIX + "&cYou already have the maximum amount of player blueprints possible!");
             return;
         }
         
-        BlueprintCreationSession session = BlueprintsPlugin.getInstance().getCreationSession(player);
-        
-        int area = (int) session.getArea();
-        if (area > Settings.PlayerBlueprint.PLAYER_BLUEPRINT_MAX_SIZE) {
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cThe size of this blueprint is too big! Your size: &6" + area + "&c, maximum size: &a" + Settings.PlayerBlueprint.PLAYER_BLUEPRINT_MAX_SIZE + "&c.");
+        int volume = (int) clipboard.getVolume();
+        if (volume > Settings.PlayerBlueprint.PLAYER_BLUEPRINT_MAX_SIZE) {
+            tell(Settings.Messages.MESSAGE_PREFIX + "&cThe size of this blueprint is too big! Your size: &6" + volume + "&c, maximum size: &a" + Settings.PlayerBlueprint.PLAYER_BLUEPRINT_MAX_SIZE + "&c.");
             return;
         }
         
@@ -55,14 +58,12 @@ public class PlayerBlueprintCompleteCommand extends SimpleSubCommand {
             return;
         }
         
-        player.removeMetadata("blueprint_create", BlueprintsPlugin.getInstance());
-        
-        if (session.getPosition1().getWorld() != session.getPosition2().getWorld()) {
-            tell(Settings.Messages.MESSAGE_PREFIX + "&cThe two positions are not in the same world!");
+        if (!clipboard.hasTwoPoints()) {
+            tell(Settings.Messages.MESSAGE_PREFIX + "&cYour clipboard does not have two points set.");
             return;
         }
         
-        session.complete(args[0]);
+        PlayerBlueprintUtil.complete(player, args[0], clipboard);
         tell(Settings.Messages.MESSAGE_PREFIX + "&eBlueprint creation session completed.");
     }
 }

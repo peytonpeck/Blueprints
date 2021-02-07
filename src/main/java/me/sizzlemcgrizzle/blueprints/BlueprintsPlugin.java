@@ -14,7 +14,6 @@ import me.sizzlemcgrizzle.blueprints.command.PlayerBlueprintCommandGroup;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintMenu;
 import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintRemoveGUI;
 import me.sizzlemcgrizzle.blueprints.placement.Blueprint;
-import me.sizzlemcgrizzle.blueprints.placement.BlueprintCreationSession;
 import me.sizzlemcgrizzle.blueprints.placement.BlueprintListener;
 import me.sizzlemcgrizzle.blueprints.placement.BlueprintsReward;
 import me.sizzlemcgrizzle.blueprints.placement.InventoryLink;
@@ -41,9 +40,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -63,8 +60,6 @@ public class BlueprintsPlugin extends SimplePlugin {
     private List<PlayerBlueprintMenu> playerBlueprintMenus = new ArrayList<>();
     private List<BlueprintsReward> rewards;
     
-    private Map<Player, BlueprintCreationSession> creationSessions = new HashMap<>();
-    
     @Override
     public void onPluginStart() {
         ConfigurationSerialization.registerClass(Blueprint.class);
@@ -79,8 +74,8 @@ public class BlueprintsPlugin extends SimplePlugin {
         
         loadBlueprints();
         
-        registerEvents(new BlueprintListener());
-        registerCommands("blueprints", new BlueprintsCommandGroup());
+        registerEvents(new BlueprintListener(this));
+        registerCommands("adminblueprints", new BlueprintsCommandGroup());
         registerCommands("blueprint", Collections.singletonList("playerblueprint"), new PlayerBlueprintCommandGroup());
         registerCommands("blueprintsreward", new BlueprintsRewardCommandGroup());
         
@@ -209,28 +204,6 @@ public class BlueprintsPlugin extends SimplePlugin {
     
     public void setBlueprints(List<Blueprint> list) {
         blueprints = list;
-    }
-    
-    public Map<Player, BlueprintCreationSession> getCreationSessions() {
-        return creationSessions;
-    }
-    
-    public void addCreationSession(Player player, BlueprintCreationSession creationSession) {
-        creationSessions.put(player, creationSession);
-    }
-    
-    //Remove the creation session and cancel the particle runnable, if applicable
-    public void removeCreationSession(Player player) {
-        if (!creationSessions.containsKey(player))
-            return;
-        
-        creationSessions.get(player).remove();
-        
-        creationSessions.remove(player);
-    }
-    
-    public BlueprintCreationSession getCreationSession(Player player) {
-        return creationSessions.get(player);
     }
     
     public void removeInventoryLink(Player player) {

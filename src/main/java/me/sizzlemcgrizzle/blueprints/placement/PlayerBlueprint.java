@@ -32,12 +32,14 @@ public class PlayerBlueprint extends Blueprint {
     
     private MaterialContainer materialContainer;
     private PlayerBlueprintMaterialMenu materialGUI;
+    private UUID originalOwner;
     private UUID owner;
     private double cost;
     
     public PlayerBlueprint(ItemStack item, String schematic, String type, UUID owner, MaterialContainer container) {
         super(item, schematic, type);
         
+        this.originalOwner = owner;
         this.owner = owner;
         this.materialContainer = container;
         setCost();
@@ -47,6 +49,7 @@ public class PlayerBlueprint extends Blueprint {
         super(map);
         
         this.owner = UUID.fromString((String) map.get("owner"));
+        this.originalOwner = UUID.fromString((String) map.getOrDefault("originalOwner", owner.toString()));
         this.cost = (double) map.get("cost");
         this.materialContainer = (MaterialContainer) map.get("materialContainer");
     }
@@ -55,6 +58,7 @@ public class PlayerBlueprint extends Blueprint {
     public Map<String, Object> serialize() {
         Map<String, Object> map = super.serialize();
         
+        map.put("originalOwner", originalOwner.toString());
         map.put("owner", owner.toString());
         map.put("cost", cost);
         map.put("materialContainer", materialContainer);
@@ -96,10 +100,9 @@ public class PlayerBlueprint extends Blueprint {
     }
     
     public void remove() {
-        UUID player = owner;
         owner = UUID.randomUUID();
         //Dealing with player blueprint guis and updating them
-        BlueprintsPlugin.getInstance().getPlayerBlueprintMenu(player).setPageItems(PlayerBlueprint.getPageItems(player));
+        BlueprintsPlugin.getInstance().getPlayerBlueprintMenu(originalOwner).setPageItems(PlayerBlueprint.getPageItems(originalOwner));
     }
     
     private boolean charge(Player player) {
