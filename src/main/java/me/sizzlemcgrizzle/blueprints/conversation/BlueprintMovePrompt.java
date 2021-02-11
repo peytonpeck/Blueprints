@@ -11,10 +11,10 @@ import org.mineacademy.fo.model.SimpleComponent;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class NewPrompt extends FixedSetPrompt {
+public class BlueprintMovePrompt extends FixedSetPrompt {
     protected final BaseComponent promptText;
     
-    public NewPrompt(String text) {
+    public BlueprintMovePrompt(String text) {
         this.promptText = SimpleComponent.of(text)
                 .append("&a&l [Yes] ")
                 .onClickRunCmd("/convo yes")

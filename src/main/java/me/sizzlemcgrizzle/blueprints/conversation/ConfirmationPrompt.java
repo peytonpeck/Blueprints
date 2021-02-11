@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
  * Made by SydMontague:
  * https://github.com/SydMontague/CLCore/tree/craftcitizen/src/main/java/de/craftlancer/core/conversation
  */
-public class ConfirmationPrompt extends NewPrompt {
+public class ConfirmationPrompt extends BlueprintMovePrompt {
     
     private BlueprintPlacementSession blueprintPlacementSession;
     private String[] yes = new String[]{"yes", "1", "true", "y", "correct", "valid"};

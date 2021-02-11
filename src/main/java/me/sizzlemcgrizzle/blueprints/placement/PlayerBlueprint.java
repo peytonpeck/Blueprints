@@ -129,7 +129,11 @@ public class PlayerBlueprint extends Blueprint {
             
             ItemStack item = new ItemBuilder(entry.getKey())
                     .setDisplayName(ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "ITEM: " + ChatColor.AQUA + entry.getKey().name().toLowerCase().replace('_', ' '))
-                    .setLore("", ChatColor.GRAY + "Amount needed: " + ChatColor.GREEN + entry.getValue())
+                    .setLore("",
+                            ChatColor.GRAY + "Amount needed: " + ChatColor.GREEN + entry.getValue(),
+                            ChatColor.GRAY + "Total material price: " + ChatColor.GREEN + "$" + Settings.PlayerBlueprint.PLAYER_BLUEPRINT_MATERIAL_PRICE_MULTIPLIER
+                                    .getOrDefault(entry.getKey(), Settings.PlayerBlueprint.PLAYER_BLUEPRINT_PRICE_MULTIPLIER) * entry.getValue()
+                    )
                     .setAmount(Math.min(entry.getKey().getMaxStackSize(), entry.getValue())).build();
             
             pageItems.add(new PageItem(item));
