@@ -20,6 +20,7 @@ import com.sk89q.worldedit.world.block.BlockStateHolder;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import de.craftlancer.clclans.CLClans;
 import de.craftlancer.clclans.Clan;
+import de.craftlancer.core.LambdaRunnable;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPostPasteEvent;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPrePasteEvent;
@@ -386,12 +387,7 @@ public class BlueprintPlacementSession {
      */
     private void showErrorBlocks() {
         
-        this.clearErrorBlocks = new BukkitRunnable() {
-            @Override
-            public void run() {
-                clearErrorBlocks();
-            }
-        }.runTaskLater(blueprintsPlugin, Settings.Block.BLOCK_TIMEOUT * 20);
+        new LambdaRunnable(this::clearErrorBlocks).runTaskLater(blueprintsPlugin, Settings.Block.BLOCK_TIMEOUT * 20);
         
         if (Settings.Block.SHOW_ERROR_PREVIEW)
             errorBlockSet.forEach(loc -> player.sendBlockChange(loc, Settings.Block.ERROR_BLOCK.createBlockData()));

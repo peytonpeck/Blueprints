@@ -36,7 +36,7 @@ public class BlueprintListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void buildBlueprint(final BlockPlaceEvent event) {
         final Player player = event.getPlayer();
-        final ItemStack item = player.getInventory().getItemInMainHand().clone();
+        final ItemStack item = event.getPlayer().getInventory().getItem(event.getHand());
         final Block block = event.getBlockPlaced();
         final Location blockLocation = event.getBlockPlaced().getLocation();
         final World world = blockLocation.getWorld();
