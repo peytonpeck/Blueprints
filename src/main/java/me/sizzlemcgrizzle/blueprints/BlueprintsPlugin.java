@@ -75,7 +75,7 @@ public class BlueprintsPlugin extends SimplePlugin {
         loadBlueprints();
         
         registerEvents(new BlueprintListener(this));
-        registerCommands("adminblueprints", new BlueprintsCommandGroup());
+        registerCommands("adminblueprints", Arrays.asList("ablueprints", "blueprintsadmin"), new BlueprintsCommandGroup());
         registerCommands("blueprint", Collections.singletonList("playerblueprint"), new PlayerBlueprintCommandGroup());
         registerCommands("blueprintsreward", new BlueprintsRewardCommandGroup());
         
