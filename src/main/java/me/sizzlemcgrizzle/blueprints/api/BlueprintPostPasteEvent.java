@@ -2,6 +2,7 @@ package me.sizzlemcgrizzle.blueprints.api;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -23,9 +24,11 @@ public class BlueprintPostPasteEvent extends Event {
     private ItemStack item;
     private Location location;
     private List<Location> pasteSet;
+    private List<Entity> pastedEntities;
     private boolean isPlayerBlueprint;
     
-    public BlueprintPostPasteEvent(String type, Player player, String schematic, GameMode gamemode, ItemStack item, Location location, List<Location> set, boolean isPlayerBlueprint) {
+    public BlueprintPostPasteEvent(String type, Player player, String schematic, GameMode gamemode, ItemStack item, Location location,
+                                   List<Location> set, boolean isPlayerBlueprint, List<Entity> pastedEntities) {
         this.type = type;
         this.player = player;
         this.schematic = schematic;
@@ -34,6 +37,7 @@ public class BlueprintPostPasteEvent extends Event {
         this.location = location;
         this.pasteSet = set;
         this.isPlayerBlueprint = isPlayerBlueprint;
+        this.pastedEntities = pastedEntities;
     }
     
     @Override
@@ -98,5 +102,12 @@ public class BlueprintPostPasteEvent extends Event {
     
     public boolean isPlayerBlueprint() {
         return isPlayerBlueprint;
+    }
+    
+    /**
+     * @return a list of all pasted entities. This will either be empty or have entries.
+     */
+    public List<Entity> getPastedEntities() {
+        return pastedEntities;
     }
 }

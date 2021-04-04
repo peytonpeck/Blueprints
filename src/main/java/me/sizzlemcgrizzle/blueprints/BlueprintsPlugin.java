@@ -16,6 +16,7 @@ import me.sizzlemcgrizzle.blueprints.gui.PlayerBlueprintRemoveGUI;
 import me.sizzlemcgrizzle.blueprints.placement.Blueprint;
 import me.sizzlemcgrizzle.blueprints.placement.BlueprintListener;
 import me.sizzlemcgrizzle.blueprints.placement.BlueprintsReward;
+import me.sizzlemcgrizzle.blueprints.placement.EntityBlueprint;
 import me.sizzlemcgrizzle.blueprints.placement.InventoryLink;
 import me.sizzlemcgrizzle.blueprints.placement.MaterialContainer;
 import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
@@ -66,6 +67,7 @@ public class BlueprintsPlugin extends SimplePlugin {
         ConfigurationSerialization.registerClass(PlayerBlueprint.class);
         ConfigurationSerialization.registerClass(MaterialContainer.class);
         ConfigurationSerialization.registerClass(BlueprintsReward.class);
+        ConfigurationSerialization.registerClass(EntityBlueprint.class);
         
         instance = this;
         

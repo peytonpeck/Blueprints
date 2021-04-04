@@ -6,21 +6,18 @@ import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
+import com.sk89q.worldedit.entity.BaseEntity;
 import com.sk89q.worldedit.extent.AbstractDelegateExtent;
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
 import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.math.transform.AffineTransform;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
-import com.sk89q.worldedit.world.block.BlockTypes;
 import de.craftlancer.clclans.CLClans;
 import de.craftlancer.clclans.Clan;
 import de.craftlancer.core.LambdaRunnable;
+import de.craftlancer.core.Utils;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPostPasteEvent;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPrePasteEvent;
@@ -34,6 +31,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Rotation;
 import org.bukkit.World;
 import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
@@ -43,7 +41,13 @@ import org.bukkit.block.data.Rotatable;
 import org.bukkit.boss.BossBar;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationFactory;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.hanging.HangingBreakEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
@@ -53,17 +57,16 @@ import org.mineacademy.fo.Common;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.CompSound;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import javax.annotation.Nullable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
-public class BlueprintPlacementSession {
+public class BlueprintPlacementSession implements Listener {
     private CLClans clans = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
     private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
     private BlueprintsPlugin blueprintsPlugin = BlueprintsPlugin.getInstance();
@@ -88,14 +91,18 @@ public class BlueprintPlacementSession {
     private GameMode gameMode;
     private Inventory inventory;
     private String type;
+    private Rotation rotation = Rotation.NONE;
     
     private int counter;
     private int rotationsFromNorth;
     
     private Set<Location> pasteBlockSet = new HashSet<>();
     private Set<Location> errorBlockSet = new HashSet<>();
+    private Set<Entity> pasteEntitySet = new HashSet<>();
     private Set<Location> bannerSet = new HashSet<>();
-    private List<Location> pasteSet = new ArrayList<>();
+    
+    private List<Location> pastedBlocks = new ArrayList<>();
+    private List<Entity> pastedEntities = new ArrayList<>();
     
     private Conversation convo;
     
@@ -113,7 +120,30 @@ public class BlueprintPlacementSession {
         this.bossBar = blueprintsPlugin.getBossBar();
         this.gameMode = gameMode;
         
+        if (blueprint instanceof EntityBlueprint)
+            this.rotation = ((EntityBlueprint) blueprint).canRotate45Degrees() ?
+                    Utils.getRotationFromYaw(player.getLocation().getYaw())
+                    : Utils.getRotationFromBlockFace(player.getFacing());
+        
         rotationsFromNorth = getRotationsFromNorth(originalDirection);
+        
+        Bukkit.getPluginManager().registerEvents(this, BlueprintsPlugin.getInstance());
+    }
+    
+    @EventHandler(ignoreCancelled = true)
+    public void onEntityInteract(PlayerInteractEntityEvent event) {
+        if (pasteEntitySet.contains(event.getRightClicked())) {
+            event.setCancelled(true);
+            event.getRightClicked().remove();
+        }
+    }
+    
+    @EventHandler(ignoreCancelled = true)
+    public void onEntityInteract(HangingBreakEvent event) {
+        if (pasteEntitySet.contains(event.getEntity())) {
+            event.setCancelled(true);
+            event.getEntity().remove();
+        }
     }
     
     private int getRotationsFromNorth(BlockFace originalDirection) {
@@ -137,13 +167,10 @@ public class BlueprintPlacementSession {
         }
     }
     
-    /**
-     * Starts the process. If something goes wrong, it will cancel and return true.
-     */
     public void start() {
         
         counter -= rotationsFromNorth;
-        if (!(blueprint instanceof PlayerBlueprint))
+        if (!(blueprint instanceof PlayerBlueprint) && !(blueprint instanceof EntityBlueprint))
             holder.setTransform(new AffineTransform().rotateY(counter * 90));
         
         getBlocksInWay();
@@ -220,10 +247,35 @@ public class BlueprintPlacementSession {
                         wePlayer.sendFakeBlock(location, block);
                     return true;
                 }
+                
+                @Nullable
+                @Override
+                public com.sk89q.worldedit.entity.Entity createEntity(com.sk89q.worldedit.util.Location location, BaseEntity entity) {
+                    com.sk89q.worldedit.entity.Entity e = super.createEntity(location, entity);
+                    
+                    int[] array = e.getState().getNbtData().getIntArray("UUID");
+                    
+                    UUID uuid = new UUID((long) array[0] << 32 | array[1] & 0xFFFFFFFFL, (long) array[2] << 32 | array[3] & 0xFFFFFFFFL);
+                    
+                    new LambdaRunnable(() -> {
+                        Entity bukkitEntity = Bukkit.getEntity(uuid);
+                        
+                        if (bukkitEntity != null) {
+                            pasteEntitySet.add(bukkitEntity);
+                            bukkitEntity.setGravity(false);
+                            bukkitEntity.setInvulnerable(true);
+                            
+                            if (bukkitEntity instanceof ItemFrame && blueprint instanceof EntityBlueprint)
+                                ((ItemFrame) bukkitEntity).setRotation(rotation);
+                        }
+                    }).runTaskLater(BlueprintsPlugin.getInstance(), 1);
+                    
+                    return e;
+                }
             })
                     .to(BlockVector3.at(location.getX(), location.getY(), location.getZ()))
                     .copyBiomes(false)
-                    .copyEntities(false)
+                    .copyEntities(blueprint instanceof EntityBlueprint)
                     .ignoreAirBlocks(true)
                     .build();
             Operations.complete(previewOperation);
@@ -261,6 +313,11 @@ public class BlueprintPlacementSession {
      */
     public void transform(int times) {
         
+        if (blueprint instanceof EntityBlueprint && !((EntityBlueprint) blueprint).canRotate()) {
+            Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&eThis type of blueprint cannot be rotated.");
+            return;
+        }
+        
         if (clearErrorBlocks != null) {
             clearErrorBlocks.cancel();
             clearErrorBlocks();
@@ -280,35 +337,6 @@ public class BlueprintPlacementSession {
         }
         
         sendFakeBlocks();
-    }
-    
-    
-    /**
-     * Gets the clipboard.
-     */
-    private Clipboard getClipboardFromSchematic() {
-        Clipboard clipboard = null;
-        File file = new File(worldEditPlugin.getDataFolder().getAbsolutePath() + File.separator + "/schematics" + File.separator + "/" + blueprint.getSchematic());
-        ClipboardFormat format = ClipboardFormats.findByFile(file);
-        try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
-            clipboard = reader.read();
-            
-            if (clans != null && clans.isEnabled())
-                if (clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId())) != null) {
-                    ChatColor color = clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId())).getColor();
-                    for (BlockVector3 blockVector3 : clipboard.getRegion()) {
-                        if (clipboard.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_WOOL))
-                            clipboard.setBlock(blockVector3, MaterialUtil.getWoolColor(color));
-                        if (clipboard.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_CONCRETE))
-                            clipboard.setBlock(blockVector3, MaterialUtil.getConcreteColor(color));
-                    }
-                }
-            
-            
-        } catch (IOException | WorldEditException e) {
-            Common.log(player.getName() + " tried to place a blueprint using " + blueprint.getSchematic() + ", however this schematic isn't valid!");
-        }
-        return clipboard;
     }
     
     /**
@@ -349,21 +377,8 @@ public class BlueprintPlacementSession {
             if (!gameMode.equals(GameMode.CREATIVE))
                 player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
             Logs.addToLogs(player, location, blueprint.getSchematic(), "cancelled by event");
-        } else {
-            
-            pasteAndGetPasteBlocks();
-            
-            Logs.addToLogs(player, location, blueprint.getSchematic(), "confirmed");
-            
-            if (Settings.PLAY_SOUNDS)
-                player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
-            
-            if (clans != null && clans.isEnabled())
-                new AdjustBannerRunnable(player, clans, bannerSet).runTaskLater(SimplePlugin.getInstance(), 5);
-            
-            Common.tell(player, PLACEMENT_ACCEPTED);
-            Common.callEvent(new BlueprintPostPasteEvent(type, player, blueprint.getSchematic(), gameMode, item, location, pasteSet, blueprint instanceof PlayerBlueprint));
-        }
+        } else
+            paste();
     }
     
     /**
@@ -372,6 +387,9 @@ public class BlueprintPlacementSession {
     private void clearFakeBlocks() {
         pasteBlockSet.forEach(loc -> player.sendBlockChange(loc, loc.getBlock().getBlockData()));
         pasteBlockSet.clear();
+        
+        pasteEntitySet.forEach(e -> e.remove());
+        pasteEntitySet.clear();
     }
     
     /**
@@ -514,20 +532,42 @@ public class BlueprintPlacementSession {
                 }
             }
         }
+        
     }
     
-    private void pasteAndGetPasteBlocks() {
+    private void paste() {
         try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(world), -1)) {
             Operation previewOperation = holder.createPaste(new AbstractDelegateExtent(editSession) {
                 @Override
                 public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
-                    pasteSet.add(new Location(world, location.getX(), location.getY(), location.getZ()));
+                    pastedBlocks.add(new Location(world, location.getX(), location.getY(), location.getZ()));
                     return true;
+                }
+                
+                @Nullable
+                @Override
+                public com.sk89q.worldedit.entity.Entity createEntity(com.sk89q.worldedit.util.Location location, BaseEntity entity) {
+                    com.sk89q.worldedit.entity.Entity e = super.createEntity(location, entity);
+                    
+                    int[] array = e.getState().getNbtData().getIntArray("UUID");
+                    
+                    UUID uuid = new UUID((long) array[0] << 32 | array[1] & 0xFFFFFFFFL, (long) array[2] << 32 | array[3] & 0xFFFFFFFFL);
+                    
+                    new LambdaRunnable(() -> {
+                        Entity bukkitEntity = Bukkit.getEntity(uuid);
+                        
+                        if (bukkitEntity != null)
+                            if (bukkitEntity instanceof ItemFrame)
+                                ((ItemFrame) bukkitEntity).setRotation(rotation);
+                        pastedEntities.add(bukkitEntity);
+                    }).runTaskLater(BlueprintsPlugin.getInstance(), 1);
+                    
+                    return e;
                 }
             })
                     .to(BlockVector3.at(location.getX(), location.getY(), location.getZ()))
                     .copyBiomes(false)
-                    .copyEntities(false)
+                    .copyEntities(blueprint instanceof EntityBlueprint)
                     .ignoreAirBlocks(true)
                     .build();
             
@@ -547,6 +587,18 @@ public class BlueprintPlacementSession {
         } catch (WorldEditException e) {
             e.printStackTrace();
         }
+        
+        Logs.addToLogs(player, location, blueprint.getSchematic(), "confirmed");
+        
+        if (Settings.PLAY_SOUNDS)
+            player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
+        
+        if (clans != null && clans.isEnabled())
+            new AdjustBannerRunnable(player, clans, bannerSet).runTaskLater(SimplePlugin.getInstance(), 5);
+        
+        Common.tell(player, PLACEMENT_ACCEPTED);
+        new LambdaRunnable(() -> Common.callEvent(new BlueprintPostPasteEvent(type, player, blueprint.getSchematic(), gameMode,
+                item, location, pastedBlocks, blueprint instanceof PlayerBlueprint, pastedEntities))).runTaskLater(BlueprintsPlugin.getInstance(), 2);
     }
     
     public Player getPlayer() {
