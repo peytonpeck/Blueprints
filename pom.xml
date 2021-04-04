@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>me.sizzlemcgrizzle</groupId>
     <artifactId>blueprints</artifactId>
-    <version>1.6.11</version>
+    <version>1.6.12</version>
     <name>Blueprints</name>
 
     <properties>
