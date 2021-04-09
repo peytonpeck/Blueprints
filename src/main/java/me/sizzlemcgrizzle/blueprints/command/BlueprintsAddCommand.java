@@ -6,6 +6,8 @@ import me.sizzlemcgrizzle.blueprints.placement.EntityBlueprint;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import me.sizzlemcgrizzle.blueprints.util.SchematicUtil;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.mineacademy.fo.command.SimpleCommandGroup;
 import org.mineacademy.fo.command.SimpleSubCommand;
 
@@ -52,6 +54,10 @@ public class BlueprintsAddCommand extends SimpleSubCommand {
         }
         
         Blueprint b;
+        
+        ItemMeta meta = blueprint.getItemMeta();
+        meta.getPersistentDataContainer().set(Blueprint.BLUEPRINT_KEY, PersistentDataType.STRING, args[0]);
+        blueprint.setItemMeta(meta);
         
         if (args.length > 3)
             b = new EntityBlueprint(blueprint.clone(), args[0], args.length > 1 ? args[1] : null, Boolean.parseBoolean(args[2]), Boolean.parseBoolean(args[3]));

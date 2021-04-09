@@ -265,8 +265,10 @@ public class BlueprintPlacementSession implements Listener {
                             bukkitEntity.setGravity(false);
                             bukkitEntity.setInvulnerable(true);
                             
-                            if (bukkitEntity instanceof ItemFrame && blueprint instanceof EntityBlueprint)
+                            if (bukkitEntity instanceof ItemFrame && blueprint instanceof EntityBlueprint) {
                                 ((ItemFrame) bukkitEntity).setRotation(rotation);
+                                ((ItemFrame) bukkitEntity).setItem(item.clone());
+                            }
                         }
                     }).runTaskLater(BlueprintsPlugin.getInstance(), 1);
                     
@@ -557,8 +559,10 @@ public class BlueprintPlacementSession implements Listener {
                         Entity bukkitEntity = Bukkit.getEntity(uuid);
                         
                         if (bukkitEntity != null)
-                            if (bukkitEntity instanceof ItemFrame)
+                            if (bukkitEntity instanceof ItemFrame && blueprint instanceof EntityBlueprint) {
                                 ((ItemFrame) bukkitEntity).setRotation(rotation);
+                                ((ItemFrame) bukkitEntity).setItem(item.clone());
+                            }
                         pastedEntities.add(bukkitEntity);
                     }).runTaskLater(BlueprintsPlugin.getInstance(), 1);
                     

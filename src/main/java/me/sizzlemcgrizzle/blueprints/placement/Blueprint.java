@@ -10,12 +10,15 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import de.craftlancer.clclans.CLClans;
+import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.util.MaterialUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.mineacademy.fo.Common;
 
 import java.io.File;
@@ -25,6 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Blueprint implements ConfigurationSerializable {
+    
+    public static final NamespacedKey BLUEPRINT_KEY = new NamespacedKey(BlueprintsPlugin.getInstance(), "blueprintItem");
     private CLClans clansPlugin = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
     private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
     
@@ -121,5 +126,20 @@ public class Blueprint implements ConfigurationSerializable {
         }
         
         return new ClipboardHolder(copy);
+    }
+    
+    public boolean compareItem(ItemStack i) {
+        if (i.isSimilar(item))
+            return true;
+        
+        if (!item.getItemMeta().getPersistentDataContainer().has(BLUEPRINT_KEY, PersistentDataType.STRING))
+            return false;
+        
+        if (!i.getItemMeta().getPersistentDataContainer().has(BLUEPRINT_KEY, PersistentDataType.STRING))
+            return false;
+        
+        return item.getItemMeta().getPersistentDataContainer().get(BLUEPRINT_KEY, PersistentDataType.STRING).equals(
+                i.getItemMeta().getPersistentDataContainer().get(BLUEPRINT_KEY, PersistentDataType.STRING)
+        );
     }
 }
