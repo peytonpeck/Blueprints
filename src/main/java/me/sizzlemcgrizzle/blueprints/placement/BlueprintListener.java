@@ -40,7 +40,7 @@ public class BlueprintListener implements Listener {
         final Block block = event.getBlockPlaced();
         
         
-        if (beginBlueprint(item, player, block))
+        if (!beginBlueprint(item, player, block))
             event.setCancelled(true);
     }
     
