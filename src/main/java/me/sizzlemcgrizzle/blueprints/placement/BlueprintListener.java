@@ -39,8 +39,15 @@ public class BlueprintListener implements Listener {
         final ItemStack item = event.getPlayer().getInventory().getItem(event.getHand()).clone();
         final Block block = event.getBlockPlaced();
         
+        if (item.getItemMeta() == null || !item.getItemMeta().hasDisplayName())
+            return;
         
-        if (!beginBlueprint(item, player, block))
+        Optional<Blueprint> optional = BlueprintsPlugin.getInstance().getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
+        
+        if (!optional.isPresent())
+            return;
+        
+        if (beginBlueprint(optional.get(), item, player, block))
             event.setCancelled(true);
     }
     
@@ -53,22 +60,22 @@ public class BlueprintListener implements Listener {
         final ItemStack item = event.getPlayer().getInventory().getItem(event.getHand());
         final Block block = event.getClickedBlock().getRelative(event.getBlockFace());
         
-        if (!item.getType().isBlock())
-            if (beginBlueprint(item.clone(), player, block) && player.getGameMode() != GameMode.CREATIVE)
-                item.setAmount(item.getAmount() - 1);
-    }
-    
-    private boolean beginBlueprint(ItemStack item, Player player, Block block) {
+        if (item.getType().isBlock())
+            return;
         
         if (item.getItemMeta() == null || !item.getItemMeta().hasDisplayName())
-            return false;
+            return;
         
         Optional<Blueprint> optional = BlueprintsPlugin.getInstance().getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
         
         if (!optional.isPresent())
-            return false;
+            return;
         
-        Blueprint blueprint = optional.get();
+        if (beginBlueprint(optional.get(), item.clone(), player, block) && player.getGameMode() != GameMode.CREATIVE)
+            item.setAmount(item.getAmount() - 1);
+    }
+    
+    private boolean beginBlueprint(Blueprint blueprint, ItemStack item, Player player, Block block) {
         
         BlueprintPlacementSession session = new BlueprintPlacementSession(blueprint, player, block.getLocation(), item,
                 block, block.getWorld(), player.getGameMode(), blueprint.getType(), player.getFacing());
