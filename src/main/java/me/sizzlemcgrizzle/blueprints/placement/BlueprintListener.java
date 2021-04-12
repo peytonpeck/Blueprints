@@ -47,7 +47,7 @@ public class BlueprintListener implements Listener {
         if (!optional.isPresent())
             return;
         
-        if (beginBlueprint(optional.get(), item, player, block))
+        if (!beginBlueprint(optional.get(), item, player, block))
             event.setCancelled(true);
     }
     
