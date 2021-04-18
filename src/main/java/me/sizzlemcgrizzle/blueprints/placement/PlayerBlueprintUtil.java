@@ -48,7 +48,7 @@ public class PlayerBlueprintUtil {
             
             for (BlockVector3 blockVector3 : blockArrayClipboard.getRegion()) {
                 Material material = BukkitAdapter.adapt(blockArrayClipboard.getBlock(blockVector3).getBlockType());
-                if (material == Material.WATER || material == Material.LAVA)
+                if (material == Material.WATER || material == Material.LAVA || material == Material.RED_MUSHROOM_BLOCK || material == Material.BROWN_MUSHROOM_BLOCK)
                     blockArrayClipboard.setBlock(blockVector3, BlockTypes.AIR.getDefaultState());
             }
             
@@ -82,8 +82,9 @@ public class PlayerBlueprintUtil {
         return new ItemBuilder(Material.STONE)
                 .setCustomModelData(4)
                 .setLore("§7Place this block to spawn the building.",
-                        "§7Link chests to draw blocks from using",
-                        "§3/blueprint link create§7.",
+                        "§7Use /clipboard to link barrels",
+                        "§7or shulkerboxes to draw items from,",
+                        "§7or use your inventory.",
                         "",
                         "§7Blueprint made by: §a" + player.getName(),
                         "",

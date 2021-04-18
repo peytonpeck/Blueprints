@@ -8,27 +8,9 @@ softdepend: [CLClans, WorldEdit, WorldGuard, Essentials, Vault]
 permissions:
   blueprints.create.color:
     default: op
-  blueprints.create:
-    default: true
-  blueprints.add:
-    default: op
-  blueprints.remove:
-    default: op
-  blueprints.reload:
-    default: op
-  blueprints.list:
-    default: op
-  blueprints.get:
-    default: op
-  blueprints.addtype:
-    default: op
-  blueprintsrewards.admin:
+  blueprints.admin:
     default: op
 commands:
-  adminblueprints:
-    description: Main blueprints command group
-  blueprint:
-    description: Command to create a player blueprint
-  blueprintsreward:
-    description: Command to manage blueprints rewards
+  blueprints:
+    description: Command parent for blueprints
 

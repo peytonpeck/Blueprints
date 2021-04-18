@@ -19,7 +19,6 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
-import org.mineacademy.fo.Common;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -38,13 +37,21 @@ public class Blueprint implements ConfigurationSerializable {
     private String type;
     private Clipboard clipboard;
     
-    public Blueprint(ItemStack item, String schematic, String type) {
+    private boolean canRotate90Degrees;
+    private boolean canItemFrameRotate45Degrees;
+    private boolean canTranslate;
+    
+    public Blueprint(ItemStack item, String schematic, String type, boolean canRotate90Degrees, boolean canTranslate, boolean canItemFrameRotate45Degrees) {
         this.item = item;
         this.schematic = schematic;
         if (type == null)
             this.type = "NORMAL";
         else
             this.type = type;
+        
+        this.canRotate90Degrees = canRotate90Degrees;
+        this.canItemFrameRotate45Degrees = canItemFrameRotate45Degrees;
+        this.canTranslate = canTranslate;
         
         getClipboardFromSchematic();
     }
@@ -53,6 +60,10 @@ public class Blueprint implements ConfigurationSerializable {
         this.item = (ItemStack) map.get("item");
         this.schematic = (String) map.get("schematic");
         this.type = (String) map.get("type");
+        
+        this.canItemFrameRotate45Degrees = (boolean) map.getOrDefault("canRotate45Degrees", true);
+        this.canRotate90Degrees = (boolean) map.getOrDefault("canRotate", true);
+        this.canTranslate = (boolean) map.getOrDefault("canTranslate", true);
         
         getClipboardFromSchematic();
     }
@@ -65,6 +76,10 @@ public class Blueprint implements ConfigurationSerializable {
         map.put("schematic", schematic);
         map.put("type", type);
         
+        map.put("canRotate45Degrees", canItemFrameRotate45Degrees);
+        map.put("canRotate", canRotate90Degrees);
+        map.put("canTranslate", canTranslate);
+        
         return map;
     }
     
@@ -74,7 +89,6 @@ public class Blueprint implements ConfigurationSerializable {
         try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
             clipboard = reader.read();
         } catch (IOException e) {
-            Common.log("The schematic for this blueprint cannot be found... please fix this or there may be major errors");
             e.printStackTrace();
         }
     }
@@ -105,6 +119,18 @@ public class Blueprint implements ConfigurationSerializable {
     
     Clipboard getClipboard() {
         return clipboard;
+    }
+    
+    public boolean canItemFrameRotate45Degrees() {
+        return canItemFrameRotate45Degrees;
+    }
+    
+    public boolean canTranslate() {
+        return canTranslate;
+    }
+    
+    public boolean canRotate90Degrees() {
+        return canRotate90Degrees;
     }
     
     public ClipboardHolder getHolder(Player player) {

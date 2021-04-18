@@ -1,44 +1,46 @@
 package me.sizzlemcgrizzle.blueprints.settings;
 
+import de.craftlancer.core.util.MessageUtil;
+import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.permissions.Permission;
-import org.mineacademy.fo.remain.CompMaterial;
-import org.mineacademy.fo.settings.SimpleSettings;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class Settings extends SimpleSettings {
-    @Override
-    protected int getConfigVersion() {
-        return 0;
-    }
-    
-    @Override
-    protected String[] getHeader() {
-        String[] header = new String[6];
-        header[0] = " ------------------------------------------------------------------------------------------- #";
-        header[1] = "                                                                                             #";
-        header[2] = " Welcome to the settings file for Blueprints.                                                #";
-        header[3] = " For documentation, visit: https://github.com/SizzleMcGrizzle/Blueprints/wiki/settings.yml   #";
-        header[4] = "                                                                                             #";
-        header[5] = " ------------------------------------------------------------------------------------------- #";
-        return header;
-    }
+public class Settings {
     
     public static Boolean PLAY_SOUNDS;
-    public static List<String> TYPES;
     public static Boolean USE_ECONOMY;
     
-    private static void init() {
-        pathPrefix(null);
-        PLAY_SOUNDS = getBoolean("Play_Sounds");
-        TYPES = getStringList("Blueprint_Types");
-        USE_ECONOMY = getBoolean("Use_Economy");
+    public static void load(BlueprintsPlugin plugin) {
+        File file = new File(plugin.getDataFolder(), "settings.yml");
+        
+        if (!file.exists())
+            plugin.saveResource("settings.yml", false);
+        
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        
+        init(config);
+        Block.init(config.getConfigurationSection("Block"));
+        Messages.init(config.getConfigurationSection("Messages"));
+        PlayerBlueprint.init(config.getConfigurationSection("Player_Blueprint"));
+        
+        MessageUtil.register(plugin, new TextComponent(Settings.Messages.MESSAGE_PREFIX));
+        
+    }
+    
+    private static void init(ConfigurationSection config) {
+        PLAY_SOUNDS = config.getBoolean("Play_Sounds");
+        USE_ECONOMY = config.getBoolean("Use_Economy");
     }
     
     public static class Messages {
@@ -52,17 +54,16 @@ public class Settings extends SimpleSettings {
         public static String INVALID_SCHEMATIC;
         public static String ABOVE_Y_255;
         
-        private static void init() {
-            pathPrefix("Messages");
-            MESSAGE_PREFIX = getString("Message_Prefix");
-            RELOAD_SUCCESS = getString("Reload_Success");
-            BUILD_SUCCESS = getString("Build_Success");
-            SHOW_ERROR_TRUE_MESSAGE = getString("Show_Error_True_Message");
-            SHOW_ERROR_FALSE_MESSAGE = getString("Show_Error_False_Message");
-            PLACEMENT_DENIED = getString("Placement_Denied");
-            IS_CONVERSING = getString("Is_Conversing");
-            INVALID_SCHEMATIC = getString("Invalid_Schematic");
-            ABOVE_Y_255 = getString("Above_Y_255");
+        private static void init(ConfigurationSection config) {
+            MESSAGE_PREFIX = ChatColor.translateAlternateColorCodes('&', config.getString("Message_Prefix"));
+            RELOAD_SUCCESS = ChatColor.translateAlternateColorCodes('&', config.getString("Reload_Success"));
+            BUILD_SUCCESS = ChatColor.translateAlternateColorCodes('&', config.getString("Build_Success"));
+            SHOW_ERROR_TRUE_MESSAGE = ChatColor.translateAlternateColorCodes('&', config.getString("Show_Error_True_Message"));
+            SHOW_ERROR_FALSE_MESSAGE = ChatColor.translateAlternateColorCodes('&', config.getString("Show_Error_False_Message"));
+            PLACEMENT_DENIED = ChatColor.translateAlternateColorCodes('&', config.getString("Placement_Denied"));
+            IS_CONVERSING = ChatColor.translateAlternateColorCodes('&', config.getString("Is_Conversing"));
+            INVALID_SCHEMATIC = ChatColor.translateAlternateColorCodes('&', config.getString("Invalid_Schematic"));
+            ABOVE_Y_255 = ChatColor.translateAlternateColorCodes('&', config.getString("Above_Y_255"));
         }
         
     }
@@ -73,17 +74,15 @@ public class Settings extends SimpleSettings {
         public static Double PLAYER_BLUEPRINT_PRICE_MULTIPLIER;
         public static Map<Material, Double> PLAYER_BLUEPRINT_MATERIAL_PRICE_MULTIPLIER;
         
-        private static void init() {
-            pathPrefix("Player_Blueprint");
-            
-            LIMITS = getStringList("Player_Blueprint_Limits");
+        private static void init(ConfigurationSection config) {
+            LIMITS = config.getStringList("Player_Blueprint_Limits");
             LIMITS.forEach(limit -> {
                 if (Bukkit.getPluginManager().getPermission(limit) == null)
                     Bukkit.getPluginManager().addPermission(new Permission(limit));
             });
-            PLAYER_BLUEPRINT_MAX_SIZE = getInteger("Player_Blueprint_Max_Size");
-            PLAYER_BLUEPRINT_PRICE_MULTIPLIER = getDouble("Player_Blueprint_Price_Multiplier");
-            ConfigurationSection section = getConfig().getConfigurationSection("Player_Blueprint").getConfigurationSection("Player_Blueprint_Material_Price_Multiplier");
+            PLAYER_BLUEPRINT_MAX_SIZE = config.getInt("Player_Blueprint_Max_Size");
+            PLAYER_BLUEPRINT_PRICE_MULTIPLIER = config.getDouble("Player_Blueprint_Price_Multiplier");
+            ConfigurationSection section = config.getConfigurationSection("Player_Blueprint_Material_Price_Multiplier");
             PLAYER_BLUEPRINT_MATERIAL_PRICE_MULTIPLIER = new HashMap<>();
             for (String key : section.getKeys(false))
                 PLAYER_BLUEPRINT_MATERIAL_PRICE_MULTIPLIER.put(Material.valueOf(key), section.getDouble(key));
@@ -100,17 +99,15 @@ public class Settings extends SimpleSettings {
         public static Boolean NO_PLACE_ADMIN_CLAIM;
         public static Integer BOSSBAR_DURATION;
         
-        private static void init() {
-            pathPrefix("Block");
-            
-            SHOW_ERROR_PREVIEW = getBoolean("Show_Error_Preview");
-            BLOCK_TIMEOUT = getInteger("Block_Timeout");
-            ERROR_BLOCK = Material.getMaterial(getString("Error_Block"));
-            IGNORE_BLOCKS = getMaterialList("Ignore_Blocks").getSource().stream().map(CompMaterial::getMaterial).collect(Collectors.toList());
-            NO_PLACE_OUTSIDE_CLAIMS = getBoolean("No_Place_Outside_Claims");
-            NO_PLACE_BLOCK_IN_WAY = getBoolean("No_Place_Block_In_Way");
-            NO_PLACE_ADMIN_CLAIM = getBoolean("No_Place_Admin_Claim");
-            BOSSBAR_DURATION = getInteger("Bossbar_Duration");
+        private static void init(ConfigurationSection config) {
+            SHOW_ERROR_PREVIEW = config.getBoolean("Show_Error_Preview");
+            BLOCK_TIMEOUT = config.getInt("Block_Timeout");
+            ERROR_BLOCK = Material.getMaterial(config.getString("Error_Block"));
+            IGNORE_BLOCKS = config.getStringList("Ignore_Blocks").stream().map(Material::valueOf).collect(Collectors.toList());
+            NO_PLACE_OUTSIDE_CLAIMS = config.getBoolean("No_Place_Outside_Claims");
+            NO_PLACE_BLOCK_IN_WAY = config.getBoolean("No_Place_Block_In_Way");
+            NO_PLACE_ADMIN_CLAIM = config.getBoolean("No_Place_Admin_Claim");
+            BOSSBAR_DURATION = config.getInt("Bossbar_Duration");
             
         }
     }

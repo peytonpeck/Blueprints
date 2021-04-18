@@ -1,6 +1,10 @@
 package me.sizzlemcgrizzle.blueprints.placement;
 
+import de.craftlancer.clstuff.rewards.RewardsManager;
 import de.craftlancer.core.LambdaRunnable;
+import de.craftlancer.core.Utils;
+import de.craftlancer.core.util.MessageLevel;
+import de.craftlancer.core.util.MessageUtil;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPostPasteEvent;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
@@ -21,7 +25,6 @@ import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.mineacademy.fo.Common;
 
 import java.util.Optional;
 
@@ -42,7 +45,7 @@ public class BlueprintListener implements Listener {
         if (item.getItemMeta() == null || !item.getItemMeta().hasDisplayName())
             return;
         
-        Optional<Blueprint> optional = BlueprintsPlugin.getInstance().getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
+        Optional<Blueprint> optional = plugin.getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
         
         if (!optional.isPresent())
             return;
@@ -66,7 +69,7 @@ public class BlueprintListener implements Listener {
         if (item.getItemMeta() == null || !item.getItemMeta().hasDisplayName())
             return;
         
-        Optional<Blueprint> optional = BlueprintsPlugin.getInstance().getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
+        Optional<Blueprint> optional = plugin.getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
         
         if (!optional.isPresent())
             return;
@@ -77,7 +80,7 @@ public class BlueprintListener implements Listener {
     
     private boolean beginBlueprint(Blueprint blueprint, ItemStack item, Player player, Block block) {
         
-        BlueprintPlacementSession session = new BlueprintPlacementSession(blueprint, player, block.getLocation(), item,
+        BlueprintPlacementSession session = new BlueprintPlacementSession(plugin, blueprint, player, block.getLocation(), item,
                 block, block.getWorld(), player.getGameMode(), blueprint.getType(), player.getFacing());
         
         if (validateBlueprint(session))
@@ -92,14 +95,14 @@ public class BlueprintListener implements Listener {
         Player player = blueprintPlacementSession.getPlayer();
         
         if (player.isConversing()) {
-            Common.tell(player, BlueprintPlacementSession.IS_CONVERSING);
+            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.IS_CONVERSING);
             return true;
         }
         
-        boolean bool = BlueprintsPlugin.isInRegion(player, blueprintPlacementSession.getLocation());
+        boolean bool = Utils.isInAdminRegion(blueprintPlacementSession.getLocation());
         
         if (bool)
-            Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cYou cannot place a blueprint anywhere in an admin claim!");
+            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.MESSAGE_PREFIX + "&cYou cannot place a blueprint anywhere in an admin claim!");
         
         return bool;
     }
@@ -112,14 +115,14 @@ public class BlueprintListener implements Listener {
                     .forEach(location -> location.getBlock().setType(Material.AIR));
         }
         
-        plugin.getRewards().stream().filter(r -> r.getBaseSchematic().equals(event.getSchematic())).forEach(r -> r.reward(event.getPlayer()));
+        RewardsManager.getInstance().getReward(event.getType()).ifPresent(r -> r.reward(event.getPlayer(), true));
     }
     
     @EventHandler(ignoreCancelled = true)
     public void onPlayerLogout(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         
-        BlueprintsPlugin.getInstance().getLink(player).ifPresent(l -> plugin.removeInventoryLink(player));
+        plugin.getLink(player).ifPresent(l -> plugin.removeInventoryLink(player));
     }
     
     @EventHandler(ignoreCancelled = true)
@@ -138,7 +141,7 @@ public class BlueprintListener implements Listener {
         if (block.getType() != Material.BARREL && !block.getType().name().contains("SHULKER_BOX"))
             return;
         
-        Optional<InventoryLink> optional = BlueprintsPlugin.getInstance().getLink(player);
+        Optional<InventoryLink> optional = plugin.getLink(player);
         
         if (!optional.isPresent())
             return;

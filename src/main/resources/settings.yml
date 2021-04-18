@@ -6,8 +6,6 @@
 # ------------------------------------------------------------------------------------------- #
 
 Play_Sounds: true
-Blueprint_Types:
-  - NORMAL
 Use_Economy: true
 
 Block:
@@ -55,10 +53,10 @@ Block:
 
 Messages:
   Message_Prefix: "&8[&3Blueprints&8] "
-  Reload_Success: "&7Blueprints configuration has been successfully reloaded."
+  Reload_Success: "&aBlueprints configuration has been successfully reloaded."
   Build_Success: "&bYour blueprint has been built!"
   Player_Not_Trusted: "&cYou must place your blueprint in a claim you are trusted in!"
-  Show_Error_True_Message: "&cBlueprint cannot be placed because either: &61)&e There are blocks in the way, &62) &eThe highlighted blocks not in a/your claim, &63)&e The highlighted blocks are in an admin claim."
+  Show_Error_True_Message: "&cThis blueprint cannot be placed here."
   Show_Error_False_Message: "&cYour blueprint cannot be built here because there are blocks in the way."
   Placement_Denied: "&eYou have cancelled the placement and your item has been returned."
   Is_Conversing: "&ePlease confirm/deny your existing placement before making a new one!"

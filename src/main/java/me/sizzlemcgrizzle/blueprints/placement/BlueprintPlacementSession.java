@@ -5,7 +5,6 @@ import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
-import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.entity.BaseEntity;
 import com.sk89q.worldedit.extent.AbstractDelegateExtent;
 import com.sk89q.worldedit.function.operation.Operation;
@@ -18,11 +17,13 @@ import de.craftlancer.clclans.CLClans;
 import de.craftlancer.clclans.Clan;
 import de.craftlancer.core.LambdaRunnable;
 import de.craftlancer.core.Utils;
+import de.craftlancer.core.conversation.FormattedConversable;
+import de.craftlancer.core.util.MessageLevel;
+import de.craftlancer.core.util.MessageUtil;
+import me.ryanhamshire.GriefPrevention.ClaimPermission;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPostPasteEvent;
 import me.sizzlemcgrizzle.blueprints.api.BlueprintPrePasteEvent;
-import me.sizzlemcgrizzle.blueprints.conversation.ConfirmationPrompt;
-import me.sizzlemcgrizzle.blueprints.conversation.FormattedConversable;
 import me.sizzlemcgrizzle.blueprints.settings.Logs;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import me.sizzlemcgrizzle.blueprints.util.MaterialUtil;
@@ -32,12 +33,16 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Rotation;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Rotatable;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarFlag;
+import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationFactory;
@@ -45,6 +50,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -53,9 +59,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.mineacademy.fo.Common;
-import org.mineacademy.fo.plugin.SimplePlugin;
-import org.mineacademy.fo.remain.CompSound;
 
 import javax.annotation.Nullable;
 import java.text.DecimalFormat;
@@ -65,19 +68,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class BlueprintPlacementSession implements Listener {
     private CLClans clans = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
-    private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
-    private BlueprintsPlugin blueprintsPlugin = BlueprintsPlugin.getInstance();
     
-    private static final String BLOCKS_IN_WAY = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_TRUE_MESSAGE;
-    private static final String BLOCKS_IN_WAY_NO_PREVIEW = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.SHOW_ERROR_FALSE_MESSAGE;
-    private static final String PLACEMENT_DENIED = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.PLACEMENT_DENIED;
-    private static final String PLACEMENT_ACCEPTED = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.BUILD_SUCCESS;
-    public static final String IS_CONVERSING = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.IS_CONVERSING;
-    public static final String ABOVE_Y_255 = Settings.Messages.MESSAGE_PREFIX + Settings.Messages.ABOVE_Y_255;
-    
+    private BlueprintsPlugin plugin;
     private Blueprint blueprint;
     private Player player;
     private Location location;
@@ -87,7 +85,6 @@ public class BlueprintPlacementSession implements Listener {
     private ClipboardHolder holder;
     private BossBar bossBar;
     private BukkitTask runnable;
-    private BukkitTask clearErrorBlocks;
     private GameMode gameMode;
     private Inventory inventory;
     private String type;
@@ -106,7 +103,7 @@ public class BlueprintPlacementSession implements Listener {
     
     private Conversation convo;
     
-    public BlueprintPlacementSession(Blueprint blueprint, Player player, Location loc, ItemStack item, Block block, World world, GameMode gameMode, String type, BlockFace originalDirection) {
+    public BlueprintPlacementSession(BlueprintsPlugin plugin, Blueprint blueprint, Player player, Location loc, ItemStack item, Block block, World world, GameMode gameMode, String type, BlockFace originalDirection) {
         this.blueprint = blueprint;
         this.type = type;
         this.item = item;
@@ -117,17 +114,17 @@ public class BlueprintPlacementSession implements Listener {
         this.world = world;
         this.inventory = player.getInventory();
         this.holder = blueprint.getHolder(player);
-        this.bossBar = blueprintsPlugin.getBossBar();
+        this.bossBar = Bukkit.getServer().createBossBar(ChatColor.GREEN + "Confirm Placement Timer", BarColor.GREEN, BarStyle.SOLID, BarFlag.CREATE_FOG);
         this.gameMode = gameMode;
+        this.plugin = plugin;
         
-        if (blueprint instanceof EntityBlueprint)
-            this.rotation = ((EntityBlueprint) blueprint).canRotate45Degrees() ?
-                    Utils.getRotationFromYaw(player.getLocation().getYaw())
-                    : Utils.getRotationFromBlockFace(player.getFacing());
+        this.rotation = blueprint.canItemFrameRotate45Degrees() ?
+                Utils.getRotationFromYaw(player.getLocation().getYaw())
+                : Utils.getRotationFromBlockFace(player.getFacing());
         
         rotationsFromNorth = getRotationsFromNorth(originalDirection);
         
-        Bukkit.getPluginManager().registerEvents(this, BlueprintsPlugin.getInstance());
+        Bukkit.getPluginManager().registerEvents(this, plugin);
     }
     
     @EventHandler(ignoreCancelled = true)
@@ -169,22 +166,22 @@ public class BlueprintPlacementSession implements Listener {
     
     public void start() {
         
-        counter -= rotationsFromNorth;
-        if (!(blueprint instanceof PlayerBlueprint) && !(blueprint instanceof EntityBlueprint))
+        if (!(blueprint instanceof PlayerBlueprint) && blueprint.canRotate90Degrees()) {
+            counter -= rotationsFromNorth;
             holder.setTransform(new AffineTransform().rotateY(counter * 90));
+        }
         
         getBlocksInWay();
         
         if (errorBlockSet.size() > 0) {
             if (errorBlockSet.stream().anyMatch(loc -> loc.getY() > 255)) {
-                Common.tell(player, ABOVE_Y_255);
+                MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.ABOVE_Y_255);
             } else {
                 if (Settings.Block.SHOW_ERROR_PREVIEW)
-                    Common.tell(player, BLOCKS_IN_WAY);
+                    MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.SHOW_ERROR_TRUE_MESSAGE);
                 else
-                    Common.tell(player, BLOCKS_IN_WAY_NO_PREVIEW);
-                if (Settings.PLAY_SOUNDS)
-                    player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+                    MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.SHOW_ERROR_FALSE_MESSAGE);
+                playSound(Sound.BLOCK_ANVIL_LAND, 0.5F);
                 showErrorBlocks();
                 
             }
@@ -195,9 +192,7 @@ public class BlueprintPlacementSession implements Listener {
         
         sendFakeBlocks();
         
-        if (Settings.PLAY_SOUNDS)
-            player.playSound(player.getLocation(), CompSound.NOTE_BASS.getSound(), 2.0F, 0.8F);
-        
+        playSound(Sound.BLOCK_NOTE_BLOCK_BASS, 0.8F);
         spawnBossBar();
         beginConversation();
     }
@@ -206,105 +201,68 @@ public class BlueprintPlacementSession implements Listener {
      * Gets all the blocks in the way at the current paste location.
      */
     private void getBlocksInWay() {
-        try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(world), -1)) {
-            Operation testOperation = holder.createPaste(new AbstractDelegateExtent(editSession) {
-                @Override
-                public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
-                    Location pasteLocation = new Location(world, location.getX(), location.getY(), location.getZ());
-                    if ((!pasteLocation.getBlock().getType().isAir() && !Settings.Block.IGNORE_BLOCKS.contains(pasteLocation.getBlock().getType()))
-                            || BlueprintsPlugin.isInRegion(player, pasteLocation)
-                            || !BlueprintsPlugin.isTrusted(player, pasteLocation)
-                            || pasteLocation.getY() > 255)
-                        errorBlockSet.add(pasteLocation);
-                    return true;
-                }
-            })
-                    .to(BlockVector3.at(location.getX(), location.getY(), location.getZ()))
-                    .copyBiomes(false)
-                    .copyEntities(false)
-                    .ignoreAirBlocks(true)
-                    .build();
-            
-            Operations.complete(testOperation);
-        } catch (WorldEditException e) {
-            e.printStackTrace();
-        }
+        operate((location, block) -> {
+            Location pasteLocation = new Location(world, location.getX(), location.getY(), location.getZ());
+            if ((!pasteLocation.getBlock().getType().isAir() && !Settings.Block.IGNORE_BLOCKS.contains(pasteLocation.getBlock().getType()))
+                    || Utils.isInAdminRegion(pasteLocation)
+                    || !Utils.isTrusted(player.getUniqueId(), pasteLocation, ClaimPermission.Build)
+                    || pasteLocation.getY() > 255)
+                errorBlockSet.add(pasteLocation);
+            return true;
+        }, (e) -> true, e -> {
+        }, false);
     }
     
     /**
      * Sends fake blocks from the given paste location.
      */
     private void sendFakeBlocks() {
-        try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(world), -1)) {
-            Operation previewOperation = holder.createPaste(new AbstractDelegateExtent(editSession) {
-                @Override
-                public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
-                    Location loc = new Location(world, location.getX(), location.getY(), location.getZ());
-                    pasteBlockSet.add(loc);
-                    bannerSet.add(loc);
-                    com.sk89q.worldedit.entity.Player wePlayer = BukkitAdapter.adapt(player);
-                    if (!MaterialUtil.isBanner(loc.getBlock().getType()))
-                        wePlayer.sendFakeBlock(location, block);
-                    return true;
-                }
+        
+        operate((location, block) -> {
+            Location loc = new Location(world, location.getX(), location.getY(), location.getZ());
+            pasteBlockSet.add(loc);
+            bannerSet.add(loc);
+            com.sk89q.worldedit.entity.Player wePlayer = BukkitAdapter.adapt(player);
+            if (!MaterialUtil.isBanner(loc.getBlock().getType()))
+                wePlayer.sendFakeBlock(location, block);
+            return true;
+        }, (e -> {
+            int[] array = e.getState().getNbtData().getIntArray("UUID");
+            
+            UUID uuid = new UUID((long) array[0] << 32 | array[1] & 0xFFFFFFFFL, (long) array[2] << 32 | array[3] & 0xFFFFFFFFL);
+            
+            new LambdaRunnable(() -> {
+                Entity bukkitEntity = Bukkit.getEntity(uuid);
                 
-                @Nullable
-                @Override
-                public com.sk89q.worldedit.entity.Entity createEntity(com.sk89q.worldedit.util.Location location, BaseEntity entity) {
-                    com.sk89q.worldedit.entity.Entity e = super.createEntity(location, entity);
+                if (bukkitEntity != null) {
+                    pasteEntitySet.add(bukkitEntity);
+                    bukkitEntity.setGravity(false);
+                    bukkitEntity.setInvulnerable(true);
                     
-                    int[] array = e.getState().getNbtData().getIntArray("UUID");
-                    
-                    UUID uuid = new UUID((long) array[0] << 32 | array[1] & 0xFFFFFFFFL, (long) array[2] << 32 | array[3] & 0xFFFFFFFFL);
-                    
-                    new LambdaRunnable(() -> {
-                        Entity bukkitEntity = Bukkit.getEntity(uuid);
-                        
-                        if (bukkitEntity != null) {
-                            pasteEntitySet.add(bukkitEntity);
-                            bukkitEntity.setGravity(false);
-                            bukkitEntity.setInvulnerable(true);
-                            
-                            if (bukkitEntity instanceof ItemFrame && blueprint instanceof EntityBlueprint) {
-                                ((ItemFrame) bukkitEntity).setRotation(rotation);
-                                ((ItemFrame) bukkitEntity).setItem(item.clone());
-                            }
-                        }
-                    }).runTaskLater(BlueprintsPlugin.getInstance(), 1);
-                    
-                    return e;
+                    if (bukkitEntity instanceof ItemFrame) {
+                        if (blueprint.canItemFrameRotate45Degrees())
+                            ((ItemFrame) bukkitEntity).setRotation(rotation);
+                        ((ItemFrame) bukkitEntity).setItem(item.clone());
+                    }
                 }
-            })
-                    .to(BlockVector3.at(location.getX(), location.getY(), location.getZ()))
-                    .copyBiomes(false)
-                    .copyEntities(blueprint instanceof EntityBlueprint)
-                    .ignoreAirBlocks(true)
-                    .build();
-            Operations.complete(previewOperation);
-        } catch (WorldEditException e) {
-            e.printStackTrace();
-        }
+            }).runTaskLater(plugin, 1);
+            
+            return true;
+        }), (e) -> {
+        }, true);
     }
     
     /**
      * Sets the origin from a conversation input (+z, +y, etc.)
      */
     public boolean setOrigin(int x, int y, int z) {
-        if (clearErrorBlocks != null) {
-            clearErrorBlocks.cancel();
-            clearErrorBlocks();
-        }
-        location.setX(location.getX() + x);
-        location.setY(location.getY() + y);
-        location.setZ(location.getZ() + z);
+        location = location.add(x, y, z);
         clearFakeBlocks();
         getBlocksInWay();
         if (errorBlockSet.size() > 0) {
-            Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&eTranslation cancelled. The blueprint cannot be moved here!");
+            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.MESSAGE_PREFIX + "&eTranslation cancelled. The blueprint cannot be moved here!");
             showErrorBlocks();
-            location.setX(location.getX() - x);
-            location.setY(location.getY() - y);
-            location.setZ(location.getZ() - z);
+            location = location.subtract(x, y, z);
         }
         sendFakeBlocks();
         return false;
@@ -315,14 +273,9 @@ public class BlueprintPlacementSession implements Listener {
      */
     public void transform(int times) {
         
-        if (blueprint instanceof EntityBlueprint && !((EntityBlueprint) blueprint).canRotate()) {
-            Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&eThis type of blueprint cannot be rotated.");
+        if (!blueprint.canRotate90Degrees()) {
+            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.MESSAGE_PREFIX + "&eThis type of blueprint cannot be rotated.");
             return;
-        }
-        
-        if (clearErrorBlocks != null) {
-            clearErrorBlocks.cancel();
-            clearErrorBlocks();
         }
         
         counter += times;
@@ -332,7 +285,7 @@ public class BlueprintPlacementSession implements Listener {
         getBlocksInWay();
         
         if (errorBlockSet.size() > 0) {
-            Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&ePlacement cancelled. The blueprint cannot be moved here!");
+            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.MESSAGE_PREFIX + "&ePlacement cancelled. The blueprint cannot be moved here!");
             showErrorBlocks();
             counter -= times;
             holder.setTransform(new AffineTransform().rotateY(counter * 90));
@@ -349,38 +302,38 @@ public class BlueprintPlacementSession implements Listener {
         pasteBlockSet.forEach(loc -> player.sendBlockChange(loc, loc.getBlock().getBlockData()));
         
         if (blueprint instanceof PlayerBlueprint) {
-            Optional<InventoryLink> optional = BlueprintsPlugin.getInstance().getLink(player);
+            Optional<InventoryLink> optional = plugin.getLink(player);
             
             if (!optional.isPresent()) {
                 if (!gameMode.equals(GameMode.CREATIVE))
                     player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
-                Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cYou must link barrels or shulker boxes to draw materials from! &4/playerblueprint link create");
-                if (Settings.PLAY_SOUNDS)
-                    player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+                MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.MESSAGE_PREFIX + "&cYou must link barrels or shulker boxes to draw materials from! &4/playerblueprint link create");
+                playSound(Sound.BLOCK_ANVIL_LAND, 0.5F);
                 return;
             }
             
-            if (!((PlayerBlueprint) blueprint).getMaterialMap().entrySet().stream().allMatch(entry -> optional.get().contains(entry.getKey(), entry.getValue()))) {
+            if (!((PlayerBlueprint) blueprint).getMaterialContainer().getMaterialMap().entrySet().stream().allMatch(entry -> optional.get().contains(entry.getKey(), entry.getValue()))) {
                 if (!gameMode.equals(GameMode.CREATIVE))
                     player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
-                Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&cThe barrels/shulker boxes you have linked do not contain the materials needed!");
-                if (Settings.PLAY_SOUNDS)
-                    player.playSound(player.getLocation(), CompSound.ANVIL_LAND.getSound(), 1F, 0.5F);
+                MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.MESSAGE_PREFIX + "&cThe barrels/shulker boxes you have linked do not contain the materials needed!");
+                playSound(Sound.BLOCK_ANVIL_LAND, 0.5F);
                 return;
             }
             
-            ((PlayerBlueprint) blueprint).getMaterialMap().forEach((k, v) -> optional.get().take(k, v));
+            ((PlayerBlueprint) blueprint).getMaterialContainer().getMaterialMap().forEach((k, v) -> optional.get().take(k, v));
         }
         //If cancelled, the placement will be cancelled.
         BlueprintPrePasteEvent event = new BlueprintPrePasteEvent(type, player, blueprint.getSchematic(), gameMode, item, location, blueprint instanceof PlayerBlueprint);
-        Common.callEvent(event);
+        Bukkit.getPluginManager().callEvent(event);
         
         if (event.isCancelled()) {
             if (!gameMode.equals(GameMode.CREATIVE))
                 player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
-            Logs.addToLogs(player, location, blueprint.getSchematic(), "cancelled by event");
+            Logs.addToLogs(plugin, player, location, blueprint.getSchematic(), "cancelled by event");
         } else
             paste();
+        
+        HandlerList.unregisterAll(this);
     }
     
     /**
@@ -390,7 +343,7 @@ public class BlueprintPlacementSession implements Listener {
         pasteBlockSet.forEach(loc -> player.sendBlockChange(loc, loc.getBlock().getBlockData()));
         pasteBlockSet.clear();
         
-        pasteEntitySet.forEach(e -> e.remove());
+        pasteEntitySet.forEach(Entity::remove);
         pasteEntitySet.clear();
     }
     
@@ -407,7 +360,7 @@ public class BlueprintPlacementSession implements Listener {
      */
     private void showErrorBlocks() {
         
-        new LambdaRunnable(this::clearErrorBlocks).runTaskLater(blueprintsPlugin, Settings.Block.BLOCK_TIMEOUT * 20);
+        new LambdaRunnable(this::clearErrorBlocks).runTaskLater(plugin, Settings.Block.BLOCK_TIMEOUT * 20);
         
         if (Settings.Block.SHOW_ERROR_PREVIEW)
             errorBlockSet.forEach(loc -> player.sendBlockChange(loc, Settings.Block.ERROR_BLOCK.createBlockData()));
@@ -429,36 +382,35 @@ public class BlueprintPlacementSession implements Listener {
                     convo.abandon();
                     cancel();
                 }
-                if (secondsLeft % 2.5 == 0 && secondsLeft != duration && Settings.PLAY_SOUNDS)
-                    player.playSound(player.getLocation(), CompSound.NOTE_BASS.getSound(), 2.0F, 0.8F);
+                if (secondsLeft % 2.5 == 0 && secondsLeft != duration)
+                    playSound(Sound.BLOCK_NOTE_BLOCK_BASS, 0.8F);
                 bossBar.setTitle(ChatColor.GREEN + "Confirm Placement: " + ChatColor.RED + format.format(secondsLeft) + ChatColor.GREEN + " seconds left");
                 bossBar.setProgress(secondsLeft / duration);
                 secondsLeft -= 0.05;
             }
-        }.runTaskTimer(blueprintsPlugin, 0, 1);
+        }.runTaskTimer(plugin, 0, 1);
     }
     
     private void beginConversation() {
-        ConversationFactory conversation = new ConversationFactory(blueprintsPlugin)
+        ConversationFactory conversation = new ConversationFactory(plugin)
                 .withLocalEcho(false)
                 .withModality(false)
                 .withTimeout(Settings.Block.BOSSBAR_DURATION)
-                .withFirstPrompt(new ConfirmationPrompt(this))
+                .withFirstPrompt(new BlueprintMovePrompt(ChatColor.YELLOW + "Place blueprint?", this, blueprint.canRotate90Degrees(), blueprint.canTranslate()))
                 .addConversationAbandonedListener(conversationAbandonedEvent -> {
                     if (!conversationAbandonedEvent.gracefulExit()) {
                         
-                        Common.tell(player, Settings.Messages.MESSAGE_PREFIX + "&eYour placement has been cancelled.");
-                        Logs.addToLogs(player, block.getLocation(), blueprint.getSchematic(), "abandoned");
+                        MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, "Your placement has been cancelled.");
+                        Logs.addToLogs(plugin, player, block.getLocation(), blueprint.getSchematic(), "abandoned");
                         
                         if (inventory.firstEmpty() == -1)
                             world.dropItemNaturally(player.getLocation(), item);
                         else if (!gameMode.equals(GameMode.CREATIVE))
                             player.getInventory().addItem(item);
                         
-                        if (Settings.PLAY_SOUNDS)
-                            player.playSound(player.getLocation(), CompSound.LEVEL_UP.getSound(), 1F, 1F);
+                        playSound(Sound.ENTITY_PLAYER_LEVELUP, 1F);
                     }
-                    makeBossBarInvisible();
+                    bossBar.removePlayer(player);
                     clearErrorBlocks();
                     clearFakeBlocks();
                     runnable.cancel();
@@ -467,18 +419,18 @@ public class BlueprintPlacementSession implements Listener {
         convo.begin();
     }
     
-    private void makeBossBarInvisible() {
-        bossBar.removePlayer(player);
-    }
-    
     public void cancel() {
-        if (Settings.PLAY_SOUNDS)
-            player.playSound(player.getLocation(), CompSound.LEVEL_UP.getSound(), 1F, 1F);
-        Common.tell(player, PLACEMENT_DENIED);
-        makeBossBarInvisible();
+        playSound(Sound.ENTITY_PLAYER_LEVELUP, 1F);
+        MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.PLACEMENT_DENIED);
+        bossBar.removePlayer(player);
         if (!gameMode.equals(GameMode.CREATIVE))
             player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
         
+    }
+    
+    private void playSound(Sound sound, float pitch) {
+        if (Settings.PLAY_SOUNDS)
+            player.playSound(player.getLocation(), sound, 0.5F, pitch);
     }
     
     private static class AdjustBannerRunnable extends BukkitRunnable {
@@ -537,20 +489,47 @@ public class BlueprintPlacementSession implements Listener {
         
     }
     
-    private void paste() {
+    private EditSession operate(BiPredicate<BlockVector3, BlockStateHolder> blockAction, Predicate<com.sk89q.worldedit.entity.Entity> entityAction,
+                                Consumer<EditSession> editSessionConsumer, boolean copyEntities) {
         try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(world), -1)) {
             Operation previewOperation = holder.createPaste(new AbstractDelegateExtent(editSession) {
                 @Override
-                public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) {
-                    pastedBlocks.add(new Location(world, location.getX(), location.getY(), location.getZ()));
-                    return true;
+                public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 location, T block) throws WorldEditException {
+                    return blockAction.test(location, block) || super.setBlock(location, block);
                 }
                 
                 @Nullable
                 @Override
                 public com.sk89q.worldedit.entity.Entity createEntity(com.sk89q.worldedit.util.Location location, BaseEntity entity) {
                     com.sk89q.worldedit.entity.Entity e = super.createEntity(location, entity);
-                    
+                    return entityAction.test(e) ? e : null;
+                }
+            })
+                    .to(BlockVector3.at(location.getX(), location.getY(), location.getZ()))
+                    .copyBiomes(false)
+                    .copyEntities(copyEntities)
+                    .ignoreAirBlocks(true)
+                    .build();
+            
+            editSessionConsumer.accept(editSession);
+            
+            Operations.complete(previewOperation);
+            
+            return editSession;
+        } catch (WorldEditException e) {
+            e.printStackTrace();
+            
+            return null;
+        }
+    }
+    
+    private void paste() {
+        
+        EditSession session = operate((location, block) -> {
+                    pastedBlocks.add(new Location(world, location.getX(), location.getY(), location.getZ()));
+                    return false;
+                },
+                e -> {
                     int[] array = e.getState().getNbtData().getIntArray("UUID");
                     
                     UUID uuid = new UUID((long) array[0] << 32 | array[1] & 0xFFFFFFFFL, (long) array[2] << 32 | array[3] & 0xFFFFFFFFL);
@@ -559,50 +538,43 @@ public class BlueprintPlacementSession implements Listener {
                         Entity bukkitEntity = Bukkit.getEntity(uuid);
                         
                         if (bukkitEntity != null)
-                            if (bukkitEntity instanceof ItemFrame && blueprint instanceof EntityBlueprint) {
-                                ((ItemFrame) bukkitEntity).setRotation(rotation);
+                            if (bukkitEntity instanceof ItemFrame) {
+                                if (blueprint.canItemFrameRotate45Degrees())
+                                    ((ItemFrame) bukkitEntity).setRotation(rotation);
                                 ((ItemFrame) bukkitEntity).setItem(item.clone());
                             }
                         pastedEntities.add(bukkitEntity);
-                    }).runTaskLater(BlueprintsPlugin.getInstance(), 1);
+                    }).runTaskLater(plugin, 1);
                     
-                    return e;
-                }
-            })
-                    .to(BlockVector3.at(location.getX(), location.getY(), location.getZ()))
-                    .copyBiomes(false)
-                    .copyEntities(blueprint instanceof EntityBlueprint)
-                    .ignoreAirBlocks(true)
-                    .build();
-            
-            if (blueprint instanceof PlayerBlueprint)
-                editSession.getSurvivalExtent().setStripNbt(true);
-            
-            Operations.complete(previewOperation);
-            Operation operation = holder
-                    .createPaste(editSession)
-                    .to(BlockVector3.at(location.getX(), location.getY(), location.getZ()))
-                    .ignoreAirBlocks(true)
-                    .copyEntities(false)
-                    .copyBiomes(false)
-                    .build();
-            
+                    return true;
+                }, editSession -> editSession.getSurvivalExtent().setStripNbt(true),
+                true);
+        
+        Operation operation = holder
+                .createPaste(session)
+                .to(BlockVector3.at(location.getX(), location.getY(), location.getZ()))
+                .ignoreAirBlocks(true)
+                .copyEntities(false)
+                .copyBiomes(false)
+                .build();
+        
+        try {
             Operations.complete(operation);
         } catch (WorldEditException e) {
             e.printStackTrace();
         }
         
-        Logs.addToLogs(player, location, blueprint.getSchematic(), "confirmed");
+        Logs.addToLogs(plugin, player, location, blueprint.getSchematic(), "confirmed");
         
-        if (Settings.PLAY_SOUNDS)
-            player.playSound(player.getLocation(), CompSound.ANVIL_USE.getSound(), 1F, 0.7F);
+        playSound(Sound.BLOCK_ANVIL_USE, 0.7F);
         
         if (clans != null && clans.isEnabled())
-            new AdjustBannerRunnable(player, clans, bannerSet).runTaskLater(SimplePlugin.getInstance(), 5);
+            new AdjustBannerRunnable(player, clans, bannerSet).runTaskLater(plugin, 5);
         
-        Common.tell(player, PLACEMENT_ACCEPTED);
-        new LambdaRunnable(() -> Common.callEvent(new BlueprintPostPasteEvent(type, player, blueprint.getSchematic(), gameMode,
-                item, location, pastedBlocks, blueprint instanceof PlayerBlueprint, pastedEntities))).runTaskLater(BlueprintsPlugin.getInstance(), 2);
+        MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.BUILD_SUCCESS);
+        new LambdaRunnable(() -> Bukkit.getPluginManager().callEvent(new BlueprintPostPasteEvent(type, player, blueprint.getSchematic(), gameMode,
+                item, location, pastedBlocks, blueprint instanceof PlayerBlueprint, pastedEntities))).
+                runTaskLater(plugin, 2);
     }
     
     public Player getPlayer() {

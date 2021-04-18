@@ -1,27 +1,11 @@
 <?xml version="1.0" ?>
 <project name="Blueprints" default="Build">
-
     <condition property="serverPath" value="D:\Desktop Move 3-15-20\Test servers\Blueprints Test Server">
         <os family="windows"/>
     </condition>
 
-    <!-- Your MC test server location for Linux -->
-    <condition property="serverPath" value="\Users\kangarko\Desktop\Minecraft Server">
-        <os family="unix"/>
-    </condition>
-
-    <condition property="serverPath" value="\Users\kangarko\Desktop\Minecraft Server">
-        <os family="mac"/>
-    </condition>
-
-    <xmlproperty file="pom.xml" prefix="pom" keeproot="false"/>
-    <property name="foundation.version" value="${pom.properties.foundation.version}"/>
-
-    <!-- Finally, compile the plugin -->
     <target name="Build">
         <jar jarfile="${serverPath}\plugins\${ant.project.name}.jar" basedir="./target/classes/" includes="**/*">
-            <zipgroupfileset dir="${user.home}/.m2/repository/com/github/kangarko/Foundation/${foundation.version}/"
-                             includes="**/*${foundation.version}.jar"/>
         </jar>
     </target>
 
