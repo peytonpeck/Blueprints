@@ -298,8 +298,7 @@ public class BlueprintPlacementSession implements Listener {
      * Completes the operation.
      */
     public void complete() {
-        //If there are still fake blocks, clear them.
-        pasteBlockSet.forEach(loc -> player.sendBlockChange(loc, loc.getBlock().getBlockData()));
+        clearFakeBlocks();
         
         if (blueprint instanceof PlayerBlueprint) {
             Optional<InventoryLink> optional = plugin.getLink(player);
@@ -546,7 +545,7 @@ public class BlueprintPlacementSession implements Listener {
                         pastedEntities.add(bukkitEntity);
                     }).runTaskLater(plugin, 1);
                     
-                    return true;
+                    return false;
                 }, editSession -> editSession.getSurvivalExtent().setStripNbt(true),
                 true);
         
