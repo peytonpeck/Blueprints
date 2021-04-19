@@ -204,7 +204,7 @@ public class BlueprintPlacementSession implements Listener {
         operate((location, block) -> {
             Location pasteLocation = new Location(world, location.getX(), location.getY(), location.getZ());
             if ((!pasteLocation.getBlock().getType().isAir() && !Settings.Block.IGNORE_BLOCKS.contains(pasteLocation.getBlock().getType()))
-                    || Utils.isInAdminRegion(pasteLocation)
+                    || (!player.isOp() && Utils.isInAdminRegion(pasteLocation))
                     || !Utils.isTrusted(player.getUniqueId(), pasteLocation, ClaimPermission.Build)
                     || pasteLocation.getY() > 255)
                 errorBlockSet.add(pasteLocation);
@@ -260,7 +260,8 @@ public class BlueprintPlacementSession implements Listener {
         clearFakeBlocks();
         getBlocksInWay();
         if (errorBlockSet.size() > 0) {
-            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.MESSAGE_PREFIX + "&eTranslation cancelled. The blueprint cannot be moved here!");
+            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, "Translation cancelled. The blueprint cannot " +
+                    "be moved here!");
             showErrorBlocks();
             location = location.subtract(x, y, z);
         }
@@ -274,7 +275,7 @@ public class BlueprintPlacementSession implements Listener {
     public void transform(int times) {
         
         if (!blueprint.canRotate90Degrees()) {
-            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.MESSAGE_PREFIX + "&eThis type of blueprint cannot be rotated.");
+            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, "This type of blueprint cannot be rotated.");
             return;
         }
         
@@ -285,7 +286,8 @@ public class BlueprintPlacementSession implements Listener {
         getBlocksInWay();
         
         if (errorBlockSet.size() > 0) {
-            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.MESSAGE_PREFIX + "&ePlacement cancelled. The blueprint cannot be moved here!");
+            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, "Placement cancelled. The blueprint cannot be " +
+                    "moved here!");
             showErrorBlocks();
             counter -= times;
             holder.setTransform(new AffineTransform().rotateY(counter * 90));
@@ -314,7 +316,8 @@ public class BlueprintPlacementSession implements Listener {
             if (!((PlayerBlueprint) blueprint).getMaterialContainer().getMaterialMap().entrySet().stream().allMatch(entry -> optional.get().contains(entry.getKey(), entry.getValue()))) {
                 if (!gameMode.equals(GameMode.CREATIVE))
                     player.getInventory().addItem(item).forEach((a, b) -> player.getWorld().dropItem(player.getLocation(), b));
-                MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.MESSAGE_PREFIX + "&cThe barrels/shulker boxes you have linked do not contain the materials needed!");
+                MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, "The barrels/shulker boxes you have linked" +
+                        " do not contain the materials needed!");
                 playSound(Sound.BLOCK_ANVIL_LAND, 0.5F);
                 return;
             }

@@ -98,10 +98,11 @@ public class BlueprintListener implements Listener {
             return true;
         }
         
-        boolean bool = Utils.isInAdminRegion(blueprintPlacementSession.getLocation());
+        boolean bool = !player.isOp() && Utils.isInAdminRegion(blueprintPlacementSession.getLocation());
         
         if (bool)
-            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.MESSAGE_PREFIX + "&cYou cannot place a blueprint anywhere in an admin claim!");
+            MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, "You cannot place a blueprint anywhere in an " +
+                    "admin claim!");
         
         return bool;
     }
