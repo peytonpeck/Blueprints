@@ -1,6 +1,5 @@
 package me.sizzlemcgrizzle.blueprints.placement;
 
-import de.craftlancer.clstuff.rewards.RewardsManager;
 import de.craftlancer.core.LambdaRunnable;
 import de.craftlancer.core.Utils;
 import de.craftlancer.core.util.MessageLevel;
@@ -114,8 +113,6 @@ public class BlueprintListener implements Listener {
                     .filter(location -> location.getBlock().getType() == Material.BARRIER)
                     .forEach(location -> location.getBlock().setType(Material.AIR));
         }
-        
-        RewardsManager.getInstance().getReward(event.getType()).ifPresent(r -> r.reward(event.getPlayer(), true));
     }
     
     @EventHandler(ignoreCancelled = true)
