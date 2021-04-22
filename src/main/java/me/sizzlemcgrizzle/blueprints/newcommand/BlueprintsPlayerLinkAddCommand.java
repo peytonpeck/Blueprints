@@ -43,7 +43,7 @@ public class BlueprintsPlayerLinkAddCommand extends SubCommand {
             return null;
         }
         
-        if (!Utils.isTrusted(player.getUniqueId(), block.getLocation(), ClaimPermission.Build)) {
+        if (!player.isOp() && !Utils.isTrusted(player.getUniqueId(), block.getLocation(), ClaimPermission.Build)) {
             MessageUtil.sendMessage(plugin, sender, MessageLevel.INFO, "You are not trusted here.");
             return null;
         }

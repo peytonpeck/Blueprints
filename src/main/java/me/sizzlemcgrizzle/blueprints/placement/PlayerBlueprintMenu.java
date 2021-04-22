@@ -50,7 +50,10 @@ public class PlayerBlueprintMenu {
     }
     
     public void update() {
-        menu.setPageItems(getPageItems());
+        if (menu == null)
+            createMenu();
+        else
+            menu.setPageItems(getPageItems());
     }
     
     private List<MenuItem> getPageItems() {

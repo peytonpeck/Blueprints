@@ -48,7 +48,8 @@ public class BlueprintsPlayerCompleteCommand extends SubCommand {
         Optional<Clipboard> optional = ClipboardManager.getInstance().getClipboard(player.getUniqueId());
         
         if (!optional.isPresent()) {
-            MessageUtil.sendMessage(plugin, sender, MessageLevel.INFO, "You do not have an active clipboard. Use &a/clipboard new &cto create a new clipboard.");
+            MessageUtil.sendMessage(plugin, sender, MessageLevel.INFO, "You do not have an active clipboard. Use " +
+                    "§6/clipboard new §6cto create a new clipboard.");
             return null;
         }
         

@@ -205,7 +205,7 @@ public class BlueprintPlacementSession implements Listener {
             Location pasteLocation = new Location(world, location.getX(), location.getY(), location.getZ());
             if ((!pasteLocation.getBlock().getType().isAir() && !Settings.Block.IGNORE_BLOCKS.contains(pasteLocation.getBlock().getType()))
                     || (!player.isOp() && Utils.isInAdminRegion(pasteLocation))
-                    || !Utils.isTrusted(player.getUniqueId(), pasteLocation, ClaimPermission.Build)
+                    || (!player.isOp() && !Utils.isTrusted(player.getUniqueId(), pasteLocation, ClaimPermission.Build))
                     || pasteLocation.getY() > 255)
                 errorBlockSet.add(pasteLocation);
             return true;
