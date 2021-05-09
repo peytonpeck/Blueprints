@@ -7,7 +7,7 @@ import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.placement.InventoryLink;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.Chest;
+import org.bukkit.block.Container;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -57,7 +57,7 @@ public class BlueprintsPlayerLinkRemoveCommand extends SubCommand {
         }
         
         InventoryLink link = optional.get();
-        Inventory inventory = ((Chest) block.getState()).getInventory();
+        Inventory inventory = ((Container) block.getState()).getInventory();
         
         if (!link.remove(inventory))
             MessageUtil.sendMessage(plugin, sender, MessageLevel.INFO, "This barrel/shulker box is not linked.");

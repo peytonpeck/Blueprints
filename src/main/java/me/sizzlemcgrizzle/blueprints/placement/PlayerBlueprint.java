@@ -29,7 +29,7 @@ public class PlayerBlueprint extends Blueprint {
     private double cost;
     
     public PlayerBlueprint(ItemStack item, String schematic, String type, UUID owner, MaterialContainer container) {
-        super(item, schematic, type, true, false, true);
+        super(item, schematic, type, true, true, false);
         
         this.originalOwner = owner;
         this.owner = owner;
