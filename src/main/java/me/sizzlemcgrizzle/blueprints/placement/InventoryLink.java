@@ -53,7 +53,7 @@ public class InventoryLink {
         copy.add(owner.getInventory());
         for (Inventory inventory : copy) {
             for (ItemStack item : inventory.getContents()) {
-                if (item == null)
+                if (item == null || !item.getType().isItem())
                     continue;
                 if (item.getType() == material)
                     amount -= item.getAmount();

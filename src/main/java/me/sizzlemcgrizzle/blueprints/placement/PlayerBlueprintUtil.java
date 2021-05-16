@@ -48,7 +48,11 @@ public class PlayerBlueprintUtil {
             
             for (BlockVector3 blockVector3 : blockArrayClipboard.getRegion()) {
                 Material material = BukkitAdapter.adapt(blockArrayClipboard.getBlock(blockVector3).getBlockType());
-                if (material == Material.WATER || material == Material.LAVA || material == Material.RED_MUSHROOM_BLOCK || material == Material.BROWN_MUSHROOM_BLOCK)
+                if (material == Material.WATER
+                        || material == Material.LAVA
+                        || material == Material.RED_MUSHROOM_BLOCK
+                        || material == Material.BROWN_MUSHROOM_BLOCK
+                        || !material.isItem())
                     blockArrayClipboard.setBlock(blockVector3, BlockTypes.AIR.getDefaultState());
             }
             

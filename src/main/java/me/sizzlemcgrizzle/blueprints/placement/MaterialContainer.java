@@ -44,6 +44,8 @@ public class MaterialContainer implements ConfigurationSerializable {
             
             }
         });
+        
+        materialMap.entrySet().removeIf(entry -> !entry.getKey().isItem());
     }
     
     @Override
@@ -59,7 +61,12 @@ public class MaterialContainer implements ConfigurationSerializable {
             for (double y = box.getMinY(); y <= box.getMaxY(); y++)
                 for (double z = box.getMinZ(); z <= box.getMaxZ(); z++) {
                     Material material = (new Location(world, x, y, z)).getBlock().getType();
-                    if (material == Material.AIR || material == Material.WATER || material == Material.LAVA)
+                    if (material == Material.AIR
+                            || material == Material.WATER
+                            || material == Material.LAVA
+                            || material == Material.RED_MUSHROOM_BLOCK
+                            || material == Material.BROWN_MUSHROOM_BLOCK
+                            || !material.isItem())
                         continue;
                     if (material.name().contains("WALL"))
                         material = MaterialUtil.replaceWallMaterial(material);
