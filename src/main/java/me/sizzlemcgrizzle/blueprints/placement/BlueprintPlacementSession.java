@@ -15,8 +15,8 @@ import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
 import de.craftlancer.clapi.blueprints.BlueprintPostPasteEvent;
 import de.craftlancer.clapi.blueprints.BlueprintPrePasteEvent;
-import de.craftlancer.clclans.CLClans;
-import de.craftlancer.clclans.Clan;
+import de.craftlancer.clapi.clclans.AbstractCLClans;
+import de.craftlancer.clapi.clclans.AbstractClan;
 import de.craftlancer.core.LambdaRunnable;
 import de.craftlancer.core.Utils;
 import de.craftlancer.core.conversation.FormattedConversable;
@@ -73,7 +73,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class BlueprintPlacementSession implements Listener {
-    private CLClans clans = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
     
     private BlueprintsPlugin plugin;
     private Blueprint blueprint;
@@ -437,20 +436,25 @@ public class BlueprintPlacementSession implements Listener {
     
     private static class AdjustBannerRunnable extends BukkitRunnable {
         private Set<Location> bannerSet;
-        private CLClans clans;
         private Player player;
         
         
-        AdjustBannerRunnable(Player player, CLClans clans, Set<Location> bannerSet) {
+        AdjustBannerRunnable(Player player, Set<Location> bannerSet) {
             this.player = player;
-            this.clans = clans;
             this.bannerSet = bannerSet;
         }
         
         @Override
         public void run() {
             for (Location bannerLocation : bannerSet) {
-                Clan clan = clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
+
+                AbstractCLClans clans =  BlueprintsPlugin.getInstance().getClans();
+
+                if (clans == null)
+                    break;
+
+                AbstractClan clan = clans.getClan(player);
+
                 if (clan == null || clan.getBanner() == null)
                     break;
                 if (!MaterialUtil.isBanner(bannerLocation.getBlock().getType())) {
@@ -569,9 +573,8 @@ public class BlueprintPlacementSession implements Listener {
         Logs.addToLogs(plugin, player, location, blueprint.getSchematic(), "confirmed");
         
         playSound(Sound.BLOCK_ANVIL_USE, 0.7F);
-        
-        if (clans != null && clans.isEnabled())
-            new AdjustBannerRunnable(player, clans, bannerSet).runTaskLater(plugin, 5);
+
+            new AdjustBannerRunnable(player, bannerSet).runTaskLater(plugin, 5);
         
         MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.BUILD_SUCCESS);
         new LambdaRunnable(() -> Bukkit.getPluginManager().callEvent(new BlueprintPostPasteEvent(type, player, blueprint.getSchematic(), gameMode,

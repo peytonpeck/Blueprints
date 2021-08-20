@@ -2,6 +2,7 @@ package me.sizzlemcgrizzle.blueprints;
 
 import de.craftlancer.clapi.blueprints.AbstractBlueprint;
 import de.craftlancer.clapi.blueprints.AbstractBlueprintsPlugin;
+import de.craftlancer.clapi.clclans.AbstractCLClans;
 import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandHandler;
 import me.sizzlemcgrizzle.blueprints.placement.Blueprint;
 import me.sizzlemcgrizzle.blueprints.placement.BlueprintListener;
@@ -18,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
+import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -161,6 +163,10 @@ public class BlueprintsPlugin extends JavaPlugin implements AbstractBlueprintsPl
         return !newFile.exists() || newFile.listFiles() == null
                 ? new ArrayList<>()
                 : Arrays.stream(newFile.listFiles()).map(File::getName).collect(Collectors.toList());
+    }
+
+    public AbstractCLClans getClans() {
+        return Bukkit.getServicesManager().load(AbstractCLClans.class);
     }
 
     public static BlueprintsPlugin getInstance() {

@@ -10,7 +10,8 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import de.craftlancer.clapi.blueprints.AbstractBlueprint;
-import de.craftlancer.clclans.CLClans;
+import de.craftlancer.clapi.clclans.AbstractCLClans;
+import de.craftlancer.clapi.clclans.AbstractClan;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.util.MaterialUtil;
 import org.bukkit.Bukkit;
@@ -30,7 +31,6 @@ import java.util.Map;
 public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
     
     public static final NamespacedKey BLUEPRINT_KEY = new NamespacedKey(BlueprintsPlugin.getInstance(), "blueprintItem");
-    private CLClans clansPlugin = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
     private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
     
     private ItemStack item;
@@ -136,11 +136,13 @@ public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
     
     public ClipboardHolder getHolder(Player player) {
         Clipboard copy = clipboard;
+        AbstractCLClans clans = BlueprintsPlugin.getInstance().getClans();
         
         try {
-            if (clansPlugin != null && clansPlugin.isEnabled())
-                if (clansPlugin.getClan(Bukkit.getOfflinePlayer(player.getUniqueId())) != null) {
-                    ChatColor color = clansPlugin.getClan(Bukkit.getOfflinePlayer(player.getUniqueId())).getColor();
+            if (clans != null) {
+                AbstractClan clan = clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
+                if (clan != null) {
+                    ChatColor color = clan.getColor();
                     for (BlockVector3 blockVector3 : copy.getRegion()) {
                         if (copy.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_WOOL))
                             copy.setBlock(blockVector3, MaterialUtil.getWoolColor(color));
@@ -148,6 +150,7 @@ public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
                             copy.setBlock(blockVector3, MaterialUtil.getConcreteColor(color));
                     }
                 }
+            }
         } catch (WorldEditException e) {
             e.printStackTrace();
         }
