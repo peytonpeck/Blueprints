@@ -9,6 +9,7 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BlockTypes;
+import de.craftlancer.clapi.blueprints.AbstractBlueprint;
 import de.craftlancer.clclans.CLClans;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.util.MaterialUtil;
@@ -26,7 +27,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Blueprint implements ConfigurationSerializable {
+public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
     
     public static final NamespacedKey BLUEPRINT_KEY = new NamespacedKey(BlueprintsPlugin.getInstance(), "blueprintItem");
     private CLClans clansPlugin = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");

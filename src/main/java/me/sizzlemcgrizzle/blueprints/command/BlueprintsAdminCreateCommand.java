@@ -1,4 +1,4 @@
-package me.sizzlemcgrizzle.blueprints.newcommand;
+package me.sizzlemcgrizzle.blueprints.command;
 
 import de.craftlancer.core.Utils;
 import de.craftlancer.core.command.SubCommand;
@@ -7,7 +7,6 @@ import de.craftlancer.core.util.MessageUtil;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.placement.Blueprint;
 import me.sizzlemcgrizzle.blueprints.placement.PlayerBlueprint;
-import me.sizzlemcgrizzle.blueprints.util.SchematicUtil;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;

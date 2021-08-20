@@ -1,21 +1,20 @@
-package me.sizzlemcgrizzle.blueprints.newcommand;
+package me.sizzlemcgrizzle.blueprints.command;
 
 import de.craftlancer.core.command.SubCommand;
 import de.craftlancer.core.util.MessageLevel;
 import de.craftlancer.core.util.MessageUtil;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
+import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 
-public class BlueprintsAdminRemoveCommand extends SubCommand {
+public class BlueprintsAdminReloadCommand extends SubCommand {
     
     private BlueprintsPlugin plugin;
     
-    public BlueprintsAdminRemoveCommand(BlueprintsPlugin plugin) {
+    public BlueprintsAdminReloadCommand(BlueprintsPlugin plugin) {
         super("blueprints.admin", plugin, false);
         
         this.plugin = plugin;
@@ -30,18 +29,11 @@ public class BlueprintsAdminRemoveCommand extends SubCommand {
     protected String execute(CommandSender sender, Command command, String s, String[] args) {
         if (!checkSender(sender)) {
             MessageUtil.sendMessage(plugin, sender, MessageLevel.INFO, "You do not have access to this command.");
-        }
-        Player player = (Player) sender;
-        
-        ItemStack item = player.getInventory().getItemInMainHand();
-        
-        if (item.getType().isAir() || plugin.getBlueprints().stream().noneMatch(blueprint -> blueprint.getItem().isSimilar(item)))
-            MessageUtil.sendMessage(plugin, sender, MessageLevel.INFO, "You must hold a blueprint.");
-        else {
-            plugin.getBlueprints().removeIf(b -> b.compareItem(item));
-            MessageUtil.sendMessage(plugin, sender, MessageLevel.SUCCESS, "Blueprint removed.");
+            return null;
         }
         
+        Settings.load(plugin);
+        MessageUtil.sendMessage(plugin, sender, MessageLevel.SUCCESS, Settings.Messages.RELOAD_SUCCESS);
         return null;
     }
     

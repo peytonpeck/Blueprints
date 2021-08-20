@@ -1,4 +1,4 @@
-package me.sizzlemcgrizzle.blueprints.newcommand;
+package me.sizzlemcgrizzle.blueprints.command;
 
 import de.craftlancer.core.clipboard.Clipboard;
 import de.craftlancer.core.clipboard.ClipboardManager;

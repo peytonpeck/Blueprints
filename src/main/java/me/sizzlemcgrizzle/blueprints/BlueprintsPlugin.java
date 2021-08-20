@@ -1,6 +1,8 @@
 package me.sizzlemcgrizzle.blueprints;
 
-import me.sizzlemcgrizzle.blueprints.newcommand.BlueprintsCommandHandler;
+import de.craftlancer.clapi.blueprints.AbstractBlueprint;
+import de.craftlancer.clapi.blueprints.AbstractBlueprintsPlugin;
+import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandHandler;
 import me.sizzlemcgrizzle.blueprints.placement.Blueprint;
 import me.sizzlemcgrizzle.blueprints.placement.BlueprintListener;
 import me.sizzlemcgrizzle.blueprints.placement.InventoryLink;
@@ -13,6 +15,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -26,14 +29,14 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class BlueprintsPlugin extends JavaPlugin {
+public class BlueprintsPlugin extends JavaPlugin implements AbstractBlueprintsPlugin {
     
     private final File blueprintFile = new File(getDataFolder(), "blueprints.yml");
     
     private static BlueprintsPlugin instance;
     private static Economy econ = null;
     
-    private List<Blueprint> blueprints;
+    private List<AbstractBlueprint> blueprints;
     private List<InventoryLink> inventoryLinks = new ArrayList<>();
     private Map<UUID, PlayerBlueprintMenu> playerBlueprintMenus = new HashMap<>();
     
@@ -82,7 +85,7 @@ public class BlueprintsPlugin extends JavaPlugin {
             saveResource(blueprintFile.getName(), false);
         
         YamlConfiguration config = YamlConfiguration.loadConfiguration(blueprintFile);
-        blueprints = (List<Blueprint>) config.getList("blueprints", new ArrayList<>());
+        blueprints = (List<AbstractBlueprint>) config.getList("blueprints", new ArrayList<>());
         blueprints.addAll((List<PlayerBlueprint>) config.getList("playerBlueprints", new ArrayList<>()));
     }
     
@@ -103,10 +106,24 @@ public class BlueprintsPlugin extends JavaPlugin {
         }
     }
     
-    public List<Blueprint> getBlueprints() {
+    public List<AbstractBlueprint> getBlueprints() {
         return blueprints;
     }
-    
+
+    @Override
+    public Optional<AbstractBlueprint> getBlueprint(String schematic) {
+        return blueprints.stream().filter(b -> !(b instanceof PlayerBlueprint))
+                .filter(b -> b.getSchematic().equals(schematic))
+                .findFirst();
+    }
+
+    @Override
+    public Optional<AbstractBlueprint> getBlueprint(ItemStack itemStack) {
+        return blueprints.stream().filter(b -> !(b instanceof PlayerBlueprint))
+                .filter(b -> ((Blueprint) b).compareItem(itemStack))
+                .findFirst();
+    }
+
     public List<PlayerBlueprint> getPlayerBlueprints() {
         return blueprints.stream().filter(blueprint -> blueprint instanceof PlayerBlueprint).map(blueprint -> (PlayerBlueprint) blueprint).collect(Collectors.toList());
     }

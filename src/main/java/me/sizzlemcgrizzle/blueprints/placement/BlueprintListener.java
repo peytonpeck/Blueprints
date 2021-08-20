@@ -1,11 +1,12 @@
 package me.sizzlemcgrizzle.blueprints.placement;
 
+import de.craftlancer.clapi.blueprints.AbstractBlueprint;
+import de.craftlancer.clapi.blueprints.BlueprintPostPasteEvent;
 import de.craftlancer.core.LambdaRunnable;
 import de.craftlancer.core.Utils;
 import de.craftlancer.core.util.MessageLevel;
 import de.craftlancer.core.util.MessageUtil;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
-import me.sizzlemcgrizzle.blueprints.api.BlueprintPostPasteEvent;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -44,12 +45,12 @@ public class BlueprintListener implements Listener {
         if (item.getItemMeta() == null || !item.getItemMeta().hasDisplayName())
             return;
         
-        Optional<Blueprint> optional = plugin.getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
+        Optional<AbstractBlueprint> optional = plugin.getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
         
         if (!optional.isPresent())
             return;
         
-        if (!beginBlueprint(optional.get(), item, player, block))
+        if (!beginBlueprint((Blueprint) optional.get(), item, player, block))
             event.setCancelled(true);
     }
     
@@ -68,12 +69,12 @@ public class BlueprintListener implements Listener {
         if (item.getItemMeta() == null || !item.getItemMeta().hasDisplayName())
             return;
         
-        Optional<Blueprint> optional = plugin.getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
+        Optional<AbstractBlueprint> optional = plugin.getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
         
         if (!optional.isPresent())
             return;
         
-        if (beginBlueprint(optional.get(), item.clone(), player, block) && player.getGameMode() != GameMode.CREATIVE)
+        if (beginBlueprint((Blueprint) optional.get(), item.clone(), player, block) && player.getGameMode() != GameMode.CREATIVE)
             item.setAmount(item.getAmount() - 1);
     }
     
