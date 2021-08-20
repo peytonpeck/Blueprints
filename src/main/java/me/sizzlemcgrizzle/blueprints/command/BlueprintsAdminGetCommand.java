@@ -1,5 +1,6 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
+import de.craftlancer.clapi.blueprints.AbstractBlueprint;
 import de.craftlancer.core.Utils;
 import de.craftlancer.core.command.SubCommand;
 import de.craftlancer.core.util.MessageLevel;
@@ -29,7 +30,7 @@ public class BlueprintsAdminGetCommand extends SubCommand {
     @Override
     protected List<String> onTabComplete(CommandSender sender, String[] args) {
         if (args.length == 3)
-            return Utils.getMatches(args[2], plugin.getBlueprints().stream().filter(blueprint -> !(blueprint instanceof PlayerBlueprint)).map(Blueprint::getSchematic).collect(Collectors.toList()));
+            return Utils.getMatches(args[2], plugin.getBlueprints().stream().filter(blueprint -> !(blueprint instanceof PlayerBlueprint)).map(AbstractBlueprint::getSchematic).collect(Collectors.toList()));
         return Collections.emptyList();
     }
     
@@ -42,7 +43,7 @@ public class BlueprintsAdminGetCommand extends SubCommand {
         
         Player player = (Player) sender;
         
-        List<ItemStack> itemList = plugin.getBlueprints().stream().filter(blueprint -> blueprint.getSchematic().equalsIgnoreCase(args[2])).map(Blueprint::getItem).collect(Collectors.toList());
+        List<ItemStack> itemList = plugin.getBlueprints().stream().filter(blueprint -> blueprint.getSchematic().equalsIgnoreCase(args[2])).map(AbstractBlueprint::getItem).collect(Collectors.toList());
         if (itemList.size() == 0)
             MessageUtil.sendMessage(plugin, sender, MessageLevel.INFO, "There are no blueprints using this schematic.");
         else {

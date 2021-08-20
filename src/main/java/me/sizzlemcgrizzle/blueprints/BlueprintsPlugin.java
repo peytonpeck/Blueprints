@@ -21,12 +21,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class BlueprintsPlugin extends JavaPlugin implements AbstractBlueprintsPlugin {
@@ -157,8 +152,15 @@ public class BlueprintsPlugin extends JavaPlugin implements AbstractBlueprintsPl
         playerBlueprintMenus.put(uuid, menu);
         return menu;
     }
-    
-    
+
+    public static List<String> getSchematics() {
+        File newFile = new File(Bukkit.getPluginManager().getPlugin("WorldEdit").getDataFolder(), "schematics");
+
+        return !newFile.exists() || newFile.listFiles() == null
+                ? new ArrayList<>()
+                : Arrays.stream(newFile.listFiles()).map(File::getName).collect(Collectors.toList());
+    }
+
     public static BlueprintsPlugin getInstance() {
         return instance;
     }

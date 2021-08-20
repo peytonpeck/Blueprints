@@ -30,7 +30,7 @@ public class BlueprintsAdminCreateCommand extends SubCommand {
     @Override
     protected List<String> onTabComplete(CommandSender sender, String[] args) {
         if (args.length == 3)
-            return Utils.getMatches(args[2], SchematicUtil.getSchematics());
+            return Utils.getMatches(args[2], BlueprintsPlugin.getSchematics());
         if (args.length == 4)
             return Collections.singletonList("<type>");
         if (args.length == 5)
@@ -64,7 +64,7 @@ public class BlueprintsAdminCreateCommand extends SubCommand {
             return null;
         }
         
-        if (!SchematicUtil.getSchematics().contains(args[2])) {
+        if (!BlueprintsPlugin.getSchematics().contains(args[2])) {
             MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, "There is no such file '" + args[2]
                     + "'. Please add the schematic to WorldEdit's schematics folder.");
             return null;
