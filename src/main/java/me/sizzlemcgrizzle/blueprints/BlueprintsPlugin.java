@@ -17,6 +17,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -51,6 +52,7 @@ public class BlueprintsPlugin extends JavaPlugin implements AbstractBlueprintsPl
         loadBlueprints();
         
         Bukkit.getPluginManager().registerEvents(new BlueprintListener(this), this);
+        Bukkit.getServicesManager().register(AbstractBlueprintsPlugin.class,this,this, ServicePriority.Highest);
         getCommand("blueprints").setExecutor(new BlueprintsCommandHandler(this));
     }
     
