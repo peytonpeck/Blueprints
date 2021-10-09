@@ -1,7 +1,7 @@
 package me.sizzlemcgrizzle.blueprints.placement;
 
 import de.craftlancer.clapi.blueprints.AbstractBlueprint;
-import de.craftlancer.clapi.blueprints.BlueprintPostPasteEvent;
+import de.craftlancer.clapi.blueprints.event.BlueprintPostPasteEvent;
 import de.craftlancer.core.LambdaRunnable;
 import de.craftlancer.core.Utils;
 import de.craftlancer.core.util.MessageLevel;
@@ -45,7 +45,7 @@ public class BlueprintListener implements Listener {
         if (item.getItemMeta() == null || !item.getItemMeta().hasDisplayName())
             return;
         
-        Optional<AbstractBlueprint> optional = plugin.getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
+        Optional<? extends AbstractBlueprint> optional = plugin.getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
         
         if (!optional.isPresent())
             return;
@@ -69,7 +69,7 @@ public class BlueprintListener implements Listener {
         if (item.getItemMeta() == null || !item.getItemMeta().hasDisplayName())
             return;
         
-        Optional<AbstractBlueprint> optional = plugin.getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
+        Optional<? extends AbstractBlueprint> optional = plugin.getBlueprints().stream().filter(b -> b.compareItem(item)).findFirst();
         
         if (!optional.isPresent())
             return;

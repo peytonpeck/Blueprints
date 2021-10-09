@@ -122,14 +122,19 @@ public class PlayerBlueprint extends Blueprint {
         for (String l : Settings.PlayerBlueprint.LIMITS) {
             if (!player.hasPermission(l))
                 continue;
-            
+    
             int num = Integer.parseInt(l.split("blueprints.placement.")[1]);
-            
+    
             if (num == -1)
                 return -1;
             if (num > limit)
                 limit = num;
         }
         return limit;
+    }
+    
+    @Override
+    public boolean canCopyEntities() {
+        return false;
     }
 }

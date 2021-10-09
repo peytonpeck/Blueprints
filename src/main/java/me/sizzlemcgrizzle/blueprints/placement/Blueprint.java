@@ -1,6 +1,7 @@
 package me.sizzlemcgrizzle.blueprints.placement;
 
 import com.sk89q.worldedit.WorldEditException;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
@@ -10,10 +11,10 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import de.craftlancer.clapi.blueprints.AbstractBlueprint;
-import de.craftlancer.clapi.clclans.AbstractCLClans;
 import de.craftlancer.clapi.clclans.AbstractClan;
+import de.craftlancer.clapi.clclans.PluginClans;
+import de.craftlancer.core.util.MaterialUtil;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
-import me.sizzlemcgrizzle.blueprints.util.MaterialUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
@@ -94,10 +95,12 @@ public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
         }
     }
     
+    @Override
     public ItemStack getItem() {
         return item;
     }
     
+    @Override
     public String getSchematic() {
         return schematic;
     }
@@ -110,6 +113,7 @@ public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
         this.schematic = schematic;
     }
     
+    @Override
     public String getType() {
         return type;
     }
@@ -122,21 +126,24 @@ public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
         return clipboard;
     }
     
+    @Override
     public boolean canItemFrameRotate45Degrees() {
         return canItemFrameRotate45Degrees;
     }
     
+    @Override
     public boolean canTranslate() {
         return canTranslate;
     }
     
+    @Override
     public boolean canRotate90Degrees() {
         return canRotate90Degrees;
     }
     
     public ClipboardHolder getHolder(Player player) {
         Clipboard copy = clipboard;
-        AbstractCLClans clans = BlueprintsPlugin.getInstance().getClans();
+        PluginClans clans = BlueprintsPlugin.getInstance().getClans();
         
         try {
             if (clans != null) {
@@ -145,9 +152,9 @@ public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
                     ChatColor color = clan.getColor();
                     for (BlockVector3 blockVector3 : copy.getRegion()) {
                         if (copy.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_WOOL))
-                            copy.setBlock(blockVector3, MaterialUtil.getWoolColor(color));
+                            copy.setBlock(blockVector3, BukkitAdapter.asBlockType(MaterialUtil.getWoolColor(color)).getDefaultState());
                         if (copy.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_CONCRETE))
-                            copy.setBlock(blockVector3, MaterialUtil.getConcreteColor(color));
+                            copy.setBlock(blockVector3, BukkitAdapter.asBlockType(MaterialUtil.getConcreteColor(color)).getDefaultState());
                     }
                 }
             }
@@ -158,6 +165,7 @@ public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
         return new ClipboardHolder(copy);
     }
     
+    @Override
     public boolean compareItem(ItemStack i) {
         if (i.isSimilar(item))
             return true;
@@ -171,5 +179,10 @@ public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
         return item.getItemMeta().getPersistentDataContainer().get(BLUEPRINT_KEY, PersistentDataType.STRING).equals(
                 i.getItemMeta().getPersistentDataContainer().get(BLUEPRINT_KEY, PersistentDataType.STRING)
         );
+    }
+    
+    @Override
+    public boolean canCopyEntities() {
+        return true;
     }
 }

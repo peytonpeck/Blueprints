@@ -69,10 +69,18 @@ Player_Blueprint:
     - blueprints.placement.5
     - blueprints.placement.10
     - blueprints.placement.-1
+  Disabled_Materials:
+    - WATER
+    - LAVA
+    - RED_MUSHROOM_BLOCK
+    - BROWN_MUSHROOM_BLOCK
+    - SAND
+    - GRAVEL
+    - RED_SAND
   Player_Blueprint_Max_Size: 32768
   Player_Blueprint_Material_Price_Multiplier:
     BARRIER: 1
 
 Log_Lag_Over_Milis: 100
-Debug: []
+Debug: [ ]
 Version: 1

@@ -13,20 +13,20 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.math.transform.AffineTransform;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
-import de.craftlancer.clapi.blueprints.BlueprintPostPasteEvent;
-import de.craftlancer.clapi.blueprints.BlueprintPrePasteEvent;
-import de.craftlancer.clapi.clclans.AbstractCLClans;
+import de.craftlancer.clapi.blueprints.event.BlueprintPostPasteEvent;
+import de.craftlancer.clapi.blueprints.event.BlueprintPrePasteEvent;
 import de.craftlancer.clapi.clclans.AbstractClan;
+import de.craftlancer.clapi.clclans.PluginClans;
 import de.craftlancer.core.LambdaRunnable;
 import de.craftlancer.core.Utils;
 import de.craftlancer.core.conversation.FormattedConversable;
+import de.craftlancer.core.util.MaterialUtil;
 import de.craftlancer.core.util.MessageLevel;
 import de.craftlancer.core.util.MessageUtil;
 import me.ryanhamshire.GriefPrevention.ClaimPermission;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.settings.Logs;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
-import me.sizzlemcgrizzle.blueprints.util.MaterialUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -237,7 +237,7 @@ public class BlueprintPlacementSession implements Listener {
                     pasteEntitySet.add(bukkitEntity);
                     bukkitEntity.setGravity(false);
                     bukkitEntity.setInvulnerable(true);
-                    
+    
                     if (bukkitEntity instanceof ItemFrame) {
                         if (blueprint.canItemFrameRotate45Degrees())
                             ((ItemFrame) bukkitEntity).setRotation(rotation);
@@ -245,10 +245,10 @@ public class BlueprintPlacementSession implements Listener {
                     }
                 }
             }).runTaskLater(plugin, 1);
-            
+    
             return true;
         }), (e) -> {
-        }, true);
+        }, blueprint.canCopyEntities());
     }
     
     /**
@@ -447,14 +447,14 @@ public class BlueprintPlacementSession implements Listener {
         @Override
         public void run() {
             for (Location bannerLocation : bannerSet) {
-
-                AbstractCLClans clans =  BlueprintsPlugin.getInstance().getClans();
-
+    
+                PluginClans clans = BlueprintsPlugin.getInstance().getClans();
+    
                 if (clans == null)
                     break;
-
+    
                 AbstractClan clan = clans.getClan(player);
-
+    
                 if (clan == null || clan.getBanner() == null)
                     break;
                 if (!MaterialUtil.isBanner(bannerLocation.getBlock().getType())) {
@@ -551,10 +551,10 @@ public class BlueprintPlacementSession implements Listener {
                             }
                         pastedEntities.add(bukkitEntity);
                     }).runTaskLater(plugin, 1);
-                    
+    
                     return false;
                 }, editSession -> editSession.getSurvivalExtent().setStripNbt(true),
-                true);
+                blueprint.canCopyEntities());
         
         Operation operation = holder
                 .createPaste(session)
@@ -563,19 +563,19 @@ public class BlueprintPlacementSession implements Listener {
                 .copyEntities(false)
                 .copyBiomes(false)
                 .build();
-        
+    
         try {
             Operations.complete(operation);
         } catch (WorldEditException e) {
             e.printStackTrace();
         }
-        
+    
         Logs.addToLogs(plugin, player, location, blueprint.getSchematic(), "confirmed");
-        
+    
         playSound(Sound.BLOCK_ANVIL_USE, 0.7F);
-
-            new AdjustBannerRunnable(player, bannerSet).runTaskLater(plugin, 5);
-        
+    
+        new AdjustBannerRunnable(player, bannerSet).runTaskLater(plugin, 5);
+    
         MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.BUILD_SUCCESS);
         new LambdaRunnable(() -> Bukkit.getPluginManager().callEvent(new BlueprintPostPasteEvent(type, player, blueprint.getSchematic(), gameMode,
                 item, location, pastedBlocks, blueprint instanceof PlayerBlueprint, pastedEntities))).

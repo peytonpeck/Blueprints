@@ -1,8 +1,9 @@
 package me.sizzlemcgrizzle.blueprints;
 
+import de.craftlancer.clapi.LazyService;
 import de.craftlancer.clapi.blueprints.AbstractBlueprint;
-import de.craftlancer.clapi.blueprints.AbstractBlueprintsPlugin;
-import de.craftlancer.clapi.clclans.AbstractCLClans;
+import de.craftlancer.clapi.blueprints.PluginBlueprints;
+import de.craftlancer.clapi.clclans.PluginClans;
 import me.sizzlemcgrizzle.blueprints.command.BlueprintsCommandHandler;
 import me.sizzlemcgrizzle.blueprints.placement.Blueprint;
 import me.sizzlemcgrizzle.blueprints.placement.BlueprintListener;
@@ -19,24 +20,31 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
-import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class BlueprintsPlugin extends JavaPlugin implements AbstractBlueprintsPlugin {
+public class BlueprintsPlugin extends JavaPlugin implements PluginBlueprints {
     
     private final File blueprintFile = new File(getDataFolder(), "blueprints.yml");
     
     private static BlueprintsPlugin instance;
     private static Economy econ = null;
     
-    private List<AbstractBlueprint> blueprints;
+    private List<Blueprint> blueprints;
     private List<InventoryLink> inventoryLinks = new ArrayList<>();
     private Map<UUID, PlayerBlueprintMenu> playerBlueprintMenus = new HashMap<>();
+    
+    private LazyService<PluginClans> clans = new LazyService<>(PluginClans.class);
     
     @Override
     public void onEnable() {
@@ -54,7 +62,7 @@ public class BlueprintsPlugin extends JavaPlugin implements AbstractBlueprintsPl
         loadBlueprints();
         
         Bukkit.getPluginManager().registerEvents(new BlueprintListener(this), this);
-        Bukkit.getServicesManager().register(AbstractBlueprintsPlugin.class,this,this, ServicePriority.Highest);
+        Bukkit.getServicesManager().register(PluginBlueprints.class, this, this, ServicePriority.Highest);
         getCommand("blueprints").setExecutor(new BlueprintsCommandHandler(this));
     }
     
@@ -84,7 +92,7 @@ public class BlueprintsPlugin extends JavaPlugin implements AbstractBlueprintsPl
             saveResource(blueprintFile.getName(), false);
         
         YamlConfiguration config = YamlConfiguration.loadConfiguration(blueprintFile);
-        blueprints = (List<AbstractBlueprint>) config.getList("blueprints", new ArrayList<>());
+        blueprints = (List<Blueprint>) config.getList("blueprints", new ArrayList<>());
         blueprints.addAll((List<PlayerBlueprint>) config.getList("playerBlueprints", new ArrayList<>()));
     }
     
@@ -97,7 +105,7 @@ public class BlueprintsPlugin extends JavaPlugin implements AbstractBlueprintsPl
         config.getKeys(false).forEach(key -> config.set(key, null));
         config.set("blueprints", blueprints.stream().filter(blueprint -> blueprint != null && !(blueprint instanceof PlayerBlueprint)).collect(Collectors.toList()));
         config.set("playerBlueprints", blueprints.stream().filter(blueprint -> blueprint instanceof PlayerBlueprint).collect(Collectors.toList()));
-        
+    
         try {
             config.save(blueprintFile);
         } catch (IOException e) {
@@ -105,24 +113,25 @@ public class BlueprintsPlugin extends JavaPlugin implements AbstractBlueprintsPl
         }
     }
     
-    public List<AbstractBlueprint> getBlueprints() {
+    @Override
+    public List<? extends AbstractBlueprint> getBlueprints() {
         return blueprints;
     }
-
+    
     @Override
-    public Optional<AbstractBlueprint> getBlueprint(String schematic) {
+    public Optional<? extends AbstractBlueprint> getBlueprint(String schematic) {
         return blueprints.stream().filter(b -> !(b instanceof PlayerBlueprint))
                 .filter(b -> b.getSchematic().equals(schematic))
                 .findFirst();
     }
-
+    
     @Override
-    public Optional<AbstractBlueprint> getBlueprint(ItemStack itemStack) {
+    public Optional<? extends AbstractBlueprint> getBlueprint(ItemStack itemStack) {
         return blueprints.stream().filter(b -> !(b instanceof PlayerBlueprint))
                 .filter(b -> ((Blueprint) b).compareItem(itemStack))
                 .findFirst();
     }
-
+    
     public List<PlayerBlueprint> getPlayerBlueprints() {
         return blueprints.stream().filter(blueprint -> blueprint instanceof PlayerBlueprint).map(blueprint -> (PlayerBlueprint) blueprint).collect(Collectors.toList());
     }
@@ -156,19 +165,19 @@ public class BlueprintsPlugin extends JavaPlugin implements AbstractBlueprintsPl
         playerBlueprintMenus.put(uuid, menu);
         return menu;
     }
-
+    
     public static List<String> getSchematics() {
         File newFile = new File(Bukkit.getPluginManager().getPlugin("WorldEdit").getDataFolder(), "schematics");
-
+        
         return !newFile.exists() || newFile.listFiles() == null
                 ? new ArrayList<>()
                 : Arrays.stream(newFile.listFiles()).map(File::getName).collect(Collectors.toList());
     }
-
-    public AbstractCLClans getClans() {
-        return Bukkit.getServicesManager().load(AbstractCLClans.class);
+    
+    public PluginClans getClans() {
+        return clans.get();
     }
-
+    
     public static BlueprintsPlugin getInstance() {
         return instance;
     }

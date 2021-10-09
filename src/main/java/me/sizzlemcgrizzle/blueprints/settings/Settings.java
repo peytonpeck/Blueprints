@@ -11,6 +11,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.permissions.Permission;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,16 +72,28 @@ public class Settings {
     
     public static class PlayerBlueprint {
         public static List<String> LIMITS;
+        public static List<Material> DISABLED_MATERIALS;
         public static Integer PLAYER_BLUEPRINT_MAX_SIZE;
         public static Double PLAYER_BLUEPRINT_PRICE_MULTIPLIER;
         public static Map<Material, Double> PLAYER_BLUEPRINT_MATERIAL_PRICE_MULTIPLIER;
         
         private static void init(ConfigurationSection config) {
             LIMITS = config.getStringList("Player_Blueprint_Limits");
-            LIMITS.forEach(limit -> {
-                if (Bukkit.getPluginManager().getPermission(limit) == null)
-                    Bukkit.getPluginManager().addPermission(new Permission(limit));
+            LIMITS.stream().filter(limit -> Bukkit.getPluginManager().getPermission(limit) == null)
+                    .forEach(limit -> Bukkit.getPluginManager().addPermission(new Permission(limit)));
+            List<String> disabledStringList = config.getStringList("Disabled_Materials");
+            DISABLED_MATERIALS = new ArrayList<>();
+            disabledStringList.removeIf(s -> {
+                try {
+                    DISABLED_MATERIALS.add(Material.valueOf(s));
+                } catch (IllegalArgumentException e) {
+                    return false;
+                }
+                return true;
             });
+            disabledStringList.forEach(s -> DISABLED_MATERIALS
+                    .addAll(Arrays.stream(Material.values()).filter(material -> material.name().contains(s)).collect(Collectors.toList())));
+            
             PLAYER_BLUEPRINT_MAX_SIZE = config.getInt("Player_Blueprint_Max_Size");
             PLAYER_BLUEPRINT_PRICE_MULTIPLIER = config.getDouble("Player_Blueprint_Price_Multiplier");
             ConfigurationSection section = config.getConfigurationSection("Player_Blueprint_Material_Price_Multiplier");
