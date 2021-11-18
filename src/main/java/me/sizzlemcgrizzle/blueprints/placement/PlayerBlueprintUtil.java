@@ -12,7 +12,7 @@ import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.world.block.BlockTypes;
-import de.craftlancer.core.clipboard.Clipboard;
+import de.craftlancer.clapi.clcore.clipboard.AbstractClipboard;
 import de.craftlancer.core.clipboard.ClipboardManager;
 import de.craftlancer.core.util.ItemBuilder;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
@@ -29,13 +29,48 @@ import java.util.UUID;
 
 public class PlayerBlueprintUtil {
     
-    public static void complete(Player player, String name, Clipboard clipboard) {
+    public static void complete(Player player, String name, AbstractClipboard clipboard) {
         BoundingBox box = clipboard.toBoundingBox();
         MaterialContainer container = new MaterialContainer(box, clipboard.getWorld());
         
+        BlockArrayClipboard blockArrayClipboard = createClipboard(clipboard);
+        
+        String schematic = UUID.randomUUID().toString();
+        ItemStack item = createItem(player, name, schematic);
+        
+        writeSchematicToFile(schematic, blockArrayClipboard);
+        
+        BlueprintsPlugin.getInstance().addBlueprint(
+                new PlayerBlueprint(item,
+                        schematic + ".schem",
+                        "NORMAL",
+                        player.getUniqueId(),
+                        container));
+        ClipboardManager.getInstance().removeClipboard(player.getUniqueId());
+    }
+    
+    private static void writeSchematicToFile(String schematic, BlockArrayClipboard blockArrayClipboard) {
+        File file = new File(BlueprintsPlugin.getInstance().getDataFolder(), "/playerblueprints/" + schematic + ".schem");
+        
+        try {
+            if (!file.exists())
+                file.createNewFile();
+            
+            try (ClipboardWriter writer = BuiltInClipboardFormat.SPONGE_SCHEMATIC.getWriter(new FileOutputStream(file))) {
+                writer.write(blockArrayClipboard);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private static BlockArrayClipboard createClipboard(AbstractClipboard clipboard) {
         CuboidRegion region = new CuboidRegion(BukkitAdapter.adapt(clipboard.getWorld()),
                 BlockVector3.at(clipboard.getLocation1().getX(), clipboard.getLocation1().getY(), clipboard.getLocation1().getZ()),
                 BlockVector3.at(clipboard.getLocation2().getX(), clipboard.getLocation2().getY(), clipboard.getLocation2().getZ()));
+        
         BlockArrayClipboard blockArrayClipboard = new BlockArrayClipboard(region);
         
         try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(BukkitAdapter.adapt(clipboard.getWorld()), -1)) {
@@ -60,26 +95,7 @@ public class PlayerBlueprintUtil {
             e.printStackTrace();
         }
         
-        String schematic = UUID.randomUUID().toString();
-        ItemStack item = createItem(player, name, schematic);
-        
-        File file = new File(BlueprintsPlugin.getInstance().getDataFolder(), "/playerblueprints/" + schematic + ".schem");
-        
-        try {
-            if (!file.exists())
-                file.createNewFile();
-            
-            try (ClipboardWriter writer = BuiltInClipboardFormat.SPONGE_SCHEMATIC.getWriter(new FileOutputStream(file))) {
-                writer.write(blockArrayClipboard);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        
-        BlueprintsPlugin.getInstance().addBlueprint(new PlayerBlueprint(item, schematic + ".schem", "NORMAL", player.getUniqueId(), container));
-        ClipboardManager.getInstance().removeClipboard(player.getUniqueId());
+        return blockArrayClipboard;
     }
     
     private static ItemStack createItem(Player player, String name, String schematic) {

@@ -13,6 +13,7 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.math.transform.AffineTransform;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
+import de.craftlancer.clapi.LazyService;
 import de.craftlancer.clapi.blueprints.event.BlueprintPostPasteEvent;
 import de.craftlancer.clapi.blueprints.event.BlueprintPrePasteEvent;
 import de.craftlancer.clapi.clclans.AbstractClan;
@@ -73,6 +74,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class BlueprintPlacementSession implements Listener {
+    
+    private static final LazyService<PluginClans> CLANS = new LazyService<>(PluginClans.class);
     
     private BlueprintsPlugin plugin;
     private Blueprint blueprint;
@@ -448,12 +451,7 @@ public class BlueprintPlacementSession implements Listener {
         public void run() {
             for (Location bannerLocation : bannerSet) {
     
-                PluginClans clans = BlueprintsPlugin.getInstance().getClans();
-    
-                if (clans == null)
-                    break;
-    
-                AbstractClan clan = clans.getClan(player);
+                AbstractClan clan = CLANS.get().getClan(player);
     
                 if (clan == null || clan.getBanner() == null)
                     break;
@@ -574,7 +572,8 @@ public class BlueprintPlacementSession implements Listener {
     
         playSound(Sound.BLOCK_ANVIL_USE, 0.7F);
     
-        new AdjustBannerRunnable(player, bannerSet).runTaskLater(plugin, 5);
+        if (CLANS.isPresent())
+            new AdjustBannerRunnable(player, bannerSet).runTaskLater(plugin, 5);
     
         MessageUtil.sendMessage(plugin, player, MessageLevel.INFO, Settings.Messages.BUILD_SUCCESS);
         new LambdaRunnable(() -> Bukkit.getPluginManager().callEvent(new BlueprintPostPasteEvent(type, player, blueprint.getSchematic(), gameMode,

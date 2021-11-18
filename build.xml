@@ -4,9 +4,12 @@
         <os family="windows"/>
     </condition>
 
+    <xmlproperty file="pom.xml" prefix="pom" keeproot="false"/>
+    <property name="version" value="${pom.version}"/>
+
     <target name="Build">
-        <jar jarfile="${serverPath}\plugins\${ant.project.name}.jar" basedir="./target/classes/" includes="**/*">
-        </jar>
+        <jar destfile="${serverPath}/plugins/${ant.project.name}-${version}.jar" basedir="./target/classes/"
+             includes="**/*"/>
     </target>
 
 </project>

@@ -10,6 +10,7 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BlockTypes;
+import de.craftlancer.clapi.LazyService;
 import de.craftlancer.clapi.blueprints.AbstractBlueprint;
 import de.craftlancer.clapi.clclans.AbstractClan;
 import de.craftlancer.clapi.clclans.PluginClans;
@@ -32,6 +33,8 @@ import java.util.Map;
 public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
     
     public static final NamespacedKey BLUEPRINT_KEY = new NamespacedKey(BlueprintsPlugin.getInstance(), "blueprintItem");
+    private static final LazyService<PluginClans> CLANS = new LazyService<>(PluginClans.class);
+    
     private WorldEditPlugin worldEditPlugin = (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
     
     private ItemStack item;
@@ -85,14 +88,19 @@ public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
         return map;
     }
     
-    protected void getClipboardFromSchematic() {
-        File file = new File(worldEditPlugin.getDataFolder().getAbsolutePath(), "/schematics/" + schematic);
+    private void getClipboardFromSchematic() {
+        File file = getSchematicFile();
+        
         ClipboardFormat format = ClipboardFormats.findByFile(file);
         try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
             clipboard = reader.read();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    
+    protected File getSchematicFile() {
+        return new File(worldEditPlugin.getDataFolder().getAbsolutePath(), "/schematics/" + schematic);
     }
     
     @Override
@@ -142,25 +150,26 @@ public class Blueprint implements ConfigurationSerializable, AbstractBlueprint {
     }
     
     public ClipboardHolder getHolder(Player player) {
-        Clipboard copy = clipboard;
-        PluginClans clans = BlueprintsPlugin.getInstance().getClans();
+        Clipboard copy = getClipboard();
         
-        try {
-            if (clans != null) {
-                AbstractClan clan = clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
-                if (clan != null) {
-                    ChatColor color = clan.getColor();
-                    for (BlockVector3 blockVector3 : copy.getRegion()) {
-                        if (copy.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_WOOL))
-                            copy.setBlock(blockVector3, BukkitAdapter.asBlockType(MaterialUtil.getWoolColor(color)).getDefaultState());
-                        if (copy.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_CONCRETE))
-                            copy.setBlock(blockVector3, BukkitAdapter.asBlockType(MaterialUtil.getConcreteColor(color)).getDefaultState());
+        CLANS.ifPresent(clans -> {
+            try {
+                if (clans != null) {
+                    AbstractClan clan = clans.getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
+                    if (clan != null) {
+                        ChatColor color = clan.getColor();
+                        for (BlockVector3 blockVector3 : copy.getRegion()) {
+                            if (copy.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_WOOL))
+                                copy.setBlock(blockVector3, BukkitAdapter.asBlockType(MaterialUtil.getWoolColor(color)).getDefaultState());
+                            if (copy.getBlock(blockVector3).getBlockType().equals(BlockTypes.WHITE_CONCRETE))
+                                copy.setBlock(blockVector3, BukkitAdapter.asBlockType(MaterialUtil.getConcreteColor(color)).getDefaultState());
+                        }
                     }
                 }
+            } catch (WorldEditException e) {
+                e.printStackTrace();
             }
-        } catch (WorldEditException e) {
-            e.printStackTrace();
-        }
+        });
         
         return new ClipboardHolder(copy);
     }

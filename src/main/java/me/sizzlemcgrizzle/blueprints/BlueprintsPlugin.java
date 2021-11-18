@@ -44,8 +44,6 @@ public class BlueprintsPlugin extends JavaPlugin implements PluginBlueprints {
     private List<InventoryLink> inventoryLinks = new ArrayList<>();
     private Map<UUID, PlayerBlueprintMenu> playerBlueprintMenus = new HashMap<>();
     
-    private LazyService<PluginClans> clans = new LazyService<>(PluginClans.class);
-    
     @Override
     public void onEnable() {
         ConfigurationSerialization.registerClass(Blueprint.class);
@@ -128,7 +126,7 @@ public class BlueprintsPlugin extends JavaPlugin implements PluginBlueprints {
     @Override
     public Optional<? extends AbstractBlueprint> getBlueprint(ItemStack itemStack) {
         return blueprints.stream().filter(b -> !(b instanceof PlayerBlueprint))
-                .filter(b -> ((Blueprint) b).compareItem(itemStack))
+                .filter(b -> b.compareItem(itemStack))
                 .findFirst();
     }
     
@@ -172,10 +170,6 @@ public class BlueprintsPlugin extends JavaPlugin implements PluginBlueprints {
         return !newFile.exists() || newFile.listFiles() == null
                 ? new ArrayList<>()
                 : Arrays.stream(newFile.listFiles()).map(File::getName).collect(Collectors.toList());
-    }
-    
-    public PluginClans getClans() {
-        return clans.get();
     }
     
     public static BlueprintsPlugin getInstance() {

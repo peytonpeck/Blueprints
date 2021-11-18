@@ -1,6 +1,6 @@
 package me.sizzlemcgrizzle.blueprints.command;
 
-import de.craftlancer.core.clipboard.Clipboard;
+import de.craftlancer.clapi.clcore.clipboard.AbstractClipboard;
 import de.craftlancer.core.clipboard.ClipboardManager;
 import de.craftlancer.core.command.SubCommand;
 import de.craftlancer.core.util.MessageLevel;
@@ -45,15 +45,20 @@ public class BlueprintsPlayerCompleteCommand extends SubCommand {
         
         
         Player player = (Player) sender;
-        Optional<Clipboard> optional = ClipboardManager.getInstance().getClipboard(player.getUniqueId());
+        Optional<AbstractClipboard> optional = ClipboardManager.getInstance().getClipboard(player.getUniqueId());
         
         if (!optional.isPresent()) {
             MessageUtil.sendMessage(plugin, sender, MessageLevel.INFO, "You do not have an active clipboard. Use " +
-                    "§6/clipboard new §6cto create a new clipboard.");
+                    "§6/clipboard new §eto create a new clipboard.");
             return null;
         }
         
-        Clipboard clipboard = optional.get();
+        AbstractClipboard clipboard = optional.get();
+        
+        if (!clipboard.hasTwoPoints()) {
+            MessageUtil.sendMessage(plugin, sender, MessageLevel.INFO, "You must have two points selected in your clipboard.");
+            return null;
+        }
         
         if (PlayerBlueprint.getLimit(player) != -1 && PlayerBlueprint.getAmount(player) >= PlayerBlueprint.getLimit(player)) {
             MessageUtil.sendMessage(plugin, sender, MessageLevel.INFO, "You already have the maximum amount of player blueprints possible!");

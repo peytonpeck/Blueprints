@@ -1,9 +1,6 @@
 package me.sizzlemcgrizzle.blueprints.placement;
 
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import de.craftlancer.core.util.MessageLevel;
 import de.craftlancer.core.util.MessageUtil;
@@ -16,8 +13,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
@@ -59,20 +54,14 @@ public class PlayerBlueprint extends Blueprint {
     }
     
     @Override
-    protected void getClipboardFromSchematic() {
-        File file = new File(BlueprintsPlugin.getInstance().getDataFolder() + File.separator + "/playerblueprints" + File.separator + "/" + getSchematic());
-        ClipboardFormat format = ClipboardFormats.findByFile(file);
-        try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
-            setClipboard(reader.read());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    
-    @Override
     public ClipboardHolder getHolder(Player player) {
         Clipboard copy = getClipboard();
         return new ClipboardHolder(copy);
+    }
+    
+    @Override
+    protected File getSchematicFile() {
+        return new File(BlueprintsPlugin.getInstance().getDataFolder(), "/playerblueprints/" + getSchematic());
     }
     
     private void setCost() {
@@ -122,9 +111,9 @@ public class PlayerBlueprint extends Blueprint {
         for (String l : Settings.PlayerBlueprint.LIMITS) {
             if (!player.hasPermission(l))
                 continue;
-    
+            
             int num = Integer.parseInt(l.split("blueprints.placement.")[1]);
-    
+            
             if (num == -1)
                 return -1;
             if (num > limit)
