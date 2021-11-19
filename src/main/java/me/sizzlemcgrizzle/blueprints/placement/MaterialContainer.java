@@ -5,7 +5,6 @@ import de.craftlancer.core.menu.MenuItem;
 import de.craftlancer.core.resourcepack.ResourcePackManager;
 import de.craftlancer.core.resourcepack.TranslateSpaceFont;
 import de.craftlancer.core.util.ItemBuilder;
-import de.craftlancer.core.util.MaterialUtil;
 import de.craftlancer.core.util.Tuple;
 import me.sizzlemcgrizzle.blueprints.BlueprintsPlugin;
 import me.sizzlemcgrizzle.blueprints.settings.Settings;
@@ -61,6 +60,8 @@ public class MaterialContainer implements ConfigurationSerializable {
             for (double y = box.getMinY(); y <= box.getMaxY(); y++)
                 for (double z = box.getMinZ(); z <= box.getMaxZ(); z++) {
                     Material material = (new Location(world, x, y, z)).getBlock().getType();
+                    
+                    //Exclude these materials
                     if (material == Material.AIR
                             || material == Material.WATER
                             || material == Material.LAVA
@@ -68,8 +69,6 @@ public class MaterialContainer implements ConfigurationSerializable {
                             || material == Material.BROWN_MUSHROOM_BLOCK
                             || !material.isItem())
                         continue;
-                    if (material.name().contains("WALL"))
-                        material = MaterialUtil.replaceWallMaterial(material);
                     materialMap.compute(material, (k, v) -> materialMap.containsKey(k) ? materialMap.get(k) + 1 : 1);
                 }
     }
