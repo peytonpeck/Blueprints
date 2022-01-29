@@ -112,19 +112,19 @@ public class BlueprintsPlugin extends JavaPlugin implements PluginBlueprints {
     }
     
     @Override
-    public List<? extends AbstractBlueprint> getBlueprints() {
+    public List<Blueprint> getBlueprints() {
         return blueprints;
     }
     
     @Override
-    public Optional<? extends AbstractBlueprint> getBlueprint(String schematic) {
+    public Optional<Blueprint> getBlueprint(String schematic) {
         return blueprints.stream().filter(b -> !(b instanceof PlayerBlueprint))
                 .filter(b -> b.getSchematic().equals(schematic))
                 .findFirst();
     }
     
     @Override
-    public Optional<? extends AbstractBlueprint> getBlueprint(ItemStack itemStack) {
+    public Optional<Blueprint> getBlueprint(ItemStack itemStack) {
         return blueprints.stream().filter(b -> !(b instanceof PlayerBlueprint))
                 .filter(b -> b.compareItem(itemStack))
                 .findFirst();
