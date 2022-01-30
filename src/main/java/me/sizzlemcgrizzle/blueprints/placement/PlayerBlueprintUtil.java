@@ -53,8 +53,10 @@ public class PlayerBlueprintUtil {
         File file = new File(BlueprintsPlugin.getInstance().getDataFolder(), "/playerblueprints/" + schematic + ".schem");
         
         try {
-            if (!file.exists())
+            if (!file.exists()) {
+                file.getParentFile().mkdirs();
                 file.createNewFile();
+            }
             
             try (ClipboardWriter writer = BuiltInClipboardFormat.SPONGE_SCHEMATIC.getWriter(new FileOutputStream(file))) {
                 writer.write(blockArrayClipboard);
